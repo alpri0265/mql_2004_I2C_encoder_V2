@@ -5,8 +5,11 @@
 static EncoderK040 encoder;
 
 void inputBegin() {
-  // Encoder pins (см. config.h): S1->D2, S2->D12, BTN->A3
-  encoder.begin(2, 12, PIN_BTN_OK);
+  // Encoder pins из config.h:
+  //  PIN_BTN_UP   -> ENC A
+  //  PIN_BTN_DOWN -> ENC B
+  //  PIN_BTN_OK   -> ENC BTN
+  encoder.begin(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_OK);
 
   pinMode(PIN_START_BTN, INPUT_PULLUP);
   pinMode(PIN_POT, INPUT);
@@ -15,14 +18,19 @@ void inputBegin() {
 void inputPoll(InputEvents &ev) {
   ev = {};
 
-  // Энкодер (EncButton v3 внутри encoder_k040.*)
+  // Энкодер
   EncoderEvents e = encoder.poll();
-  ev.encStep  = e.step;     // +1/-1 на один "щелчок"
-  ev.encClick = e.click;    // OK
-  ev.menuClick = e.hold;    // MENU/BACK (долгое нажатие)
+  ev.encStep  = e.step;
+  ev.encClick = e.click;
 
-  // encLong не используем отдельно (оставлено для совместимости)
-  ev.encLong = false;
+  // Длинное нажатие энкодера = MENU/BACK
+  ev.menuClick = e.hold;
+
+  // START кнопка (как было)
+  static uint8_t lastStart = HIGH;
+  uint8_t nowStart = digitalRead(PIN_START_BTN);
+  if (lastStart == HIGH && nowStart == LOW) ev.startClick = true;
+  lastStart = nowStart;
 
   // Потенциометр (скользящее среднее)
   static uint16_t pAvg = 0;
