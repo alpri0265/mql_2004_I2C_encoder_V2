@@ -12,14 +12,14 @@ constexpr uint8_t PIN_START_BTN = A1;    // кнопка START/STOP (NO) -> GND
 constexpr uint8_t PIN_START_LED = A2;    // LED кнопки START
 
 // ===== DM556 =====
-constexpr uint8_t PIN_STEP = 3;          // PUL+
+constexpr uint8_t PIN_STEP = 12;          // PUL+
 constexpr uint8_t PIN_DIR  = 10;         // DIR+
 constexpr uint8_t PIN_ENA  = 11;         // ENA+
 
 // ===== INPUT (KY-040 encoder via EncButton v3) =====
 // Encoder pins (KY-040): S1->D2, S2->D12, BTN->A3
 constexpr uint8_t PIN_BTN_UP   = 2;       // ENC A (S1)  (to GND via encoder)
-constexpr uint8_t PIN_BTN_DOWN = 12;      // ENC B (S2)  (to GND via encoder)
+constexpr uint8_t PIN_BTN_DOWN = ;      // ENC B (S2)  (to GND via encoder)
 constexpr uint8_t PIN_BTN_OK   = A3;      // ENC BTN     (to GND via encoder)
 
 // ===================== ENCODER CONFIG =====================
