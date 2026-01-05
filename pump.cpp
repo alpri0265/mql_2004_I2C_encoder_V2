@@ -65,9 +65,10 @@ static void pumpSetRateHz(uint16_t hz) {
 ISR(TIMER1_COMPA_vect) {
   if (!stepEnable) return;
 
-  digitalWrite(PIN_STEP, LOW);      // common +5: импульс активен LOW
+  // common +5 wiring: PUL+ on +5V, Arduino drives PUL- (active LOW pulse)
+  digitalWrite(PIN_STEP, HIGH);  // idle HIGH for common +5 wiring
   delayMicroseconds(4);
-  digitalWrite(PIN_STEP, LOW);
+  digitalWrite(PIN_STEP, HIGH);
 }
 
 void pumpBegin() {
@@ -75,7 +76,7 @@ void pumpBegin() {
   pinMode(PIN_DIR, OUTPUT);
   pinMode(PIN_ENA, OUTPUT);
 
-  digitalWrite(PIN_STEP, HIGH);  // idle HIGH for common +5 wiring
+  digitalWrite(PIN_STEP, LOW);
   digitalWrite(PIN_DIR, HIGH);   // направление любое
   digitalWrite(PIN_ENA, LOW);    // disabled initially
 
