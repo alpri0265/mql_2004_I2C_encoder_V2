@@ -65,7 +65,7 @@ static void pumpSetRateHz(uint16_t hz) {
 ISR(TIMER1_COMPA_vect) {
   if (!stepEnable) return;
 
-  digitalWrite(PIN_STEP, HIGH);
+  digitalWrite(PIN_STEP, LOW);      // common +5: импульс активен LOW
   delayMicroseconds(4);
   digitalWrite(PIN_STEP, LOW);
 }
@@ -75,7 +75,7 @@ void pumpBegin() {
   pinMode(PIN_DIR, OUTPUT);
   pinMode(PIN_ENA, OUTPUT);
 
-  digitalWrite(PIN_STEP, LOW);
+  digitalWrite(PIN_STEP, HIGH);  // idle HIGH for common +5 wiring
   digitalWrite(PIN_DIR, HIGH);   // направление любое
   digitalWrite(PIN_ENA, LOW);    // disabled initially
 
@@ -105,6 +105,7 @@ void pumpStartSteps(uint32_t stepsPerSec) {
 void pumpStop() {
   stepEnable = false;
   TIMSK1 &= ~(1 << OCIE1A);
+  digitalWrite(PIN_STEP, HIGH); // idle HIGH
   digitalWrite(PIN_ENA, LOW);
 }
 
