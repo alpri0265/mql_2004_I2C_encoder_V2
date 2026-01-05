@@ -5,59 +5,36 @@
 static EncoderK040 encoder;
 
 void inputBegin() {
-  encoder.begin(2, 12, A3);
+  // Encoder pins (см. config.h): S1->D2, S2->D12, BTN->A3
+  encoder.begin(2, 12, PIN_BTN_OK);
+
   pinMode(PIN_START_BTN, INPUT_PULLUP);
   pinMode(PIN_POT, INPUT);
 }
 
 void inputPoll(InputEvents &ev) {
-  ev = {}; 
-  uint32_t now = millis();
+  ev = {};
 
+  // Энкодер (EncButton v3 внутри encoder_k040.*)
   EncoderEvents e = encoder.poll();
+  ev.encStep  = e.step;     // +1/-1 на один "щелчок"
+  ev.encClick = e.click;    // OK
+  ev.menuClick = e.hold;    // MENU/BACK (долгое нажатие)
 
-  // Шаги энкодера — с лёгким накоплением, чтобы избежать пропусков
-  static int8_t subStep = 0;
-  if (e.step != 0) {
-    subStep += e.step;
-    if (abs(subStep) >= 2) {  // 2 — чтобы сработка была после 1–2 импульсов, а не 10
-      ev.encStep = (subStep > 0) ? 1 : -1;
-      subStep = 0;
-    }
-  }
+  // encLong не используем отдельно (оставлено для совместимости)
+  ev.encLong = false;
 
-  // Кнопка энкодера — короткое и длинное нажатие
-  static uint32_t buttonPressTime = 0;
-  static bool buttonPressed = false;
-
-  bool buttonNow = (digitalRead(PIN_BTN_OK) == LOW);
-
-  if (buttonNow && !buttonPressed) {
-      buttonPressed = true;
-      buttonPressTime = now;
-  } else if (!buttonNow && buttonPressed) {
-      buttonPressed = false;
-      uint32_t pressDuration = now - buttonPressTime;
-      if (pressDuration >= 600) {  // длинное нажатие для меню
-          ev.menuClick = true;
-      } else if (pressDuration >= 25) {  // короткое для OK
-          ev.encClick = true;
-      }
-  }
-
-  ev.encLong = false;  // не используем
-
-  // Потенциометр
+  // Потенциометр (скользящее среднее)
   static uint16_t pAvg = 0;
   pAvg = (pAvg * 7 + analogRead(PIN_POT)) / 8;
 }
 
-uint16_t potGetAvgAdc() { 
+uint16_t potGetAvgAdc() {
   static uint16_t lastPot = 0;
   lastPot = (lastPot * 7 + analogRead(PIN_POT)) / 8;
-  return lastPot; 
+  return lastPot;
 }
 
-void potSetFilterN(uint8_t N) { 
-  (void)N; 
+void potSetFilterN(uint8_t N) {
+  (void)N;
 }
