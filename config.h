@@ -19,7 +19,7 @@ constexpr uint8_t PIN_ENA  = 11;         // ENA+
 // ===== INPUT (KY-040 encoder via EncButton v3) =====
 // Encoder pins (KY-040): S1->D2, S2->D12, BTN->A3
 constexpr uint8_t PIN_BTN_UP   = 2;       // ENC A (S1)  (to GND via encoder)
-constexpr uint8_t PIN_BTN_DOWN = ;      // ENC B (S2)  (to GND via encoder)
+constexpr uint8_t PIN_BTN_DOWN = 3;      // ENC B (S2)  (to GND via encoder)
 constexpr uint8_t PIN_BTN_OK   = A3;      // ENC BTN     (to GND via encoder)
 
 // ===================== ENCODER CONFIG =====================
