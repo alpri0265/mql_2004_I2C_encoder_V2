@@ -74,7 +74,7 @@ static void startRun() {
   pumpSetEnable(true);
   state = ST_RUN;
   uiClear();
-  uiDrawRun(S, rec_x100, set_x100, true);
+  uiDrawRun(S, rec_x100, set_x100, potMin_x100, potMax_x100, true);
 }
 
 static void stopRunToReady() {
@@ -376,9 +376,9 @@ void loop() {
       else if (state == ST_WIZ_REC || state == ST_RUN) {
         enterMenu();
       } else if (state == ST_MENU) {
-        state = ST_READY;
-        _menuBackupValid = false;
-        uiClear();
+        // START from MENU: run immediately (keep recommended range & pot control logic)
+        recomputeRecAndRange();
+        startRun();
       } else if (state == ST_CAL_RUN) {
         stopCalibrationPump();
         state = ST_MENU;
@@ -453,7 +453,7 @@ void loop() {
       case ST_WIZ_MAT:  uiDrawWizMaterial(S); break;
       case ST_WIZ_DIA:  uiDrawWizDiameter(S); break;
       case ST_WIZ_REC:  uiDrawWizRecommend(S, rec_x100, set_x100, potMin_x100, potMax_x100); break;
-      case ST_RUN:      uiDrawRun(S, rec_x100, set_x100, true); break;
+      case ST_RUN:      uiDrawRun(S, rec_x100, set_x100, potMin_x100, potMax_x100, true); break;
 
       case ST_MENU: {
         char l1[21], l2[21], l3[21];

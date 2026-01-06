@@ -139,11 +139,12 @@ void uiDrawWizRecommend(const Settings &S, int32_t rec_u_x100, int32_t set_u_x10
   draw4(l0, l1, l2, l3);
 }
 
-void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100, bool running) {
+void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100,
+               int32_t potMin_u_x100, int32_t potMax_u_x100, bool running) {
   char l0[21], l1[21], l2[21], l3[21];
   {
     char b[32];
-    snprintf(b, sizeof(b), "RUN: %s", running ? "ON" : "OFF");
+    snprintf(b, sizeof(b), "RUN:%s  OK:Menu", running ? "ON" : "OFF");
     pad20(l0, b);
   }
   {
@@ -158,7 +159,12 @@ void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100, bool r
              (long)(set_u_x100 / 100), (long)(abs(set_u_x100) % 100), (unsigned)S.cutter_mm);
     pad20(l2, b);
   }
-  pad20(l3, "START:Toggle  OK:Menu");
+  {
+    char b[32];
+    snprintf(b, sizeof(b), "POT:%ld..%ld",
+             (long)(potMin_u_x100 / 100), (long)(potMax_u_x100 / 100));
+    pad20(l3, b);
+  }
   draw4(l0, l1, l2, l3);
 }
 

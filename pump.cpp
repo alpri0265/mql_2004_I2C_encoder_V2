@@ -134,8 +134,52 @@ void pumpRunPulse(bool &phaseOn,
                   uint32_t &phaseStartMs,
                   const Settings &S,
                   int32_t flow_x100) {
-  (void)phaseOn;
-  (void)phaseStartMs;
-  (void)S;
-  (void)flow_x100;
+  // Pulse mode: alternate ON/OFF phases. During ON we output steps at rate based on flow_x100.
+  // During OFF we stop stepping (ENA off + timer interrupt off).
+  if (flow_x100 <= 0 || S.pump_gain_steps_per_u_min == 0) {
+    phaseOn = false;
+    phaseStartMs = millis();
+    pumpStop();
+    return;
+  }
+
+  // Sanity limits (protect from 0ms that would lock the state machine)
+  uint16_t onMs  = S.pulse_on_ms  < 10 ? 10 : S.pulse_on_ms;
+  uint16_t offMs = S.pulse_off_ms < 10 ? 10 : S.pulse_off_ms;
+
+  uint32_t now = millis();
+  uint32_t elapsed = now - phaseStartMs;
+
+  if (phaseOn) {
+    // Ensure we are running at the requested flow
+    // steps/min = flow * gain
+    uint64_t stepsPerMin = ((uint64_t)flow_x100 * (uint64_t)S.pump_gain_steps_per_u_min) / 100ULL;
+    if (stepsPerMin == 0) {
+      pumpStop();
+    } else {
+      // steps/sec (ceil)
+      uint32_t hz = (uint32_t)((stepsPerMin + 59ULL) / 60ULL);
+      if (hz < 1) hz = 1;
+      if (hz > 2000) hz = 2000;
+      pumpSetRateHz((uint16_t)hz);
+      pumpSetEnable(true);
+    }
+
+    // Switch to OFF phase when time is up
+    if (elapsed >= (uint32_t)onMs) {
+      phaseOn = false;
+      phaseStartMs = now;
+      pumpStop();
+    }
+  } else {
+    // OFF phase: ensure stopped
+    pumpStop();
+
+    // Switch to ON phase when time is up
+    if (elapsed >= (uint32_t)offMs) {
+      phaseOn = true;
+      phaseStartMs = now;
+      // Next loop tick will set rate and enable
+    }
+  }
 }
