@@ -8,6 +8,8 @@
 #include "pump.h"
 #include "ui.h"
 #include "menu.h"
+#include "ui_print.h"
+
 
 static AppState state = ST_READY;
 static MenuState menu;
@@ -202,7 +204,7 @@ static int8_t diaAccelStep(bool pressedNow, bool &prev, uint32_t &pressMs, uint3
 }
 
 void setup() {
-  Serial.begin(115200);  // для отладки
+  Serial.begin(9600);  // для отладки
 
   settingsLoad();
   uiBegin();

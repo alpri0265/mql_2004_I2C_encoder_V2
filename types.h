@@ -1,6 +1,24 @@
 #pragma once
 #include <Arduino.h>
 
+// Avoid macro name collisions if config.h defines UI_LANG_EN/UI_LANG_UA
+#ifdef UI_LANG_EN
+  #undef UI_LANG_EN
+#endif
+#ifdef UI_LANG_UA
+  #undef UI_LANG_UA
+#endif
+#ifdef UI_LANG
+  #undef UI_LANG
+#endif
+
+// UI language stored in EEPROM
+enum UiLang : uint8_t {
+  UILANG_EN = 0,
+  UILANG_UA = 1
+};
+
+
 // Перечисления
 enum Material : uint8_t {
   MAT_STEEL,
@@ -27,6 +45,8 @@ enum AppState : uint8_t {
 struct Settings {
   uint32_t magic;
 
+
+  UiLang   uiLang;
   Material material;
   uint8_t  cutter_mm;
 

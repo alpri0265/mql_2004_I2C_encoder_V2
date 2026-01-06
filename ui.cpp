@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "config.h"
 #include "ui.h"
+#include "ui_print.h"
 
 static LiquidCrystal_I2C lcd(LCD_I2C_ADDR, 20, 4);
 
@@ -48,6 +49,7 @@ void uiBegin() {
   Wire.begin();
   lcd.init();
   lcd.backlight();
+  uiPrintInit(&lcd);
   lcd.clear();
   lastValid = false;
   setLastBlank();
@@ -73,7 +75,7 @@ void uiDrawReady(const Settings &S) {
   pad20(l0, "READY");
   {
     char b[32];
-    snprintf(b, sizeof(b), "Mat:%s  O:%umm", matStr(S), (unsigned)S.cutter_mm);
+    snprintf(b, sizeof(b), "Mat:%s  D%umm", matStr(S), (unsigned)S.cutter_mm);
     pad20(l1, b);
   }
   {
@@ -152,7 +154,7 @@ void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100, bool r
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Set:%ld.%02ld  O:%u",
+    snprintf(b, sizeof(b), "Set:%ld.%02ld  D:%u",
              (long)(set_u_x100 / 100), (long)(abs(set_u_x100) % 100), (unsigned)S.cutter_mm);
     pad20(l2, b);
   }

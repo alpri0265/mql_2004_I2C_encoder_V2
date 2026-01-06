@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "menu.h"
 
-static constexpr uint8_t ITEM_COUNT = 17;
+static constexpr uint8_t ITEM_COUNT = 18;
 
 static int32_t clampI32(int32_t v, int32_t lo, int32_t hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
 
@@ -30,7 +30,7 @@ static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S
       break;
 
     case 1:
-      snprintf(tmp, sizeof(tmp), "Cutter O: %umm", (unsigned)S.cutter_mm);
+      snprintf(tmp, sizeof(tmp), "Cutter D: %umm", (unsigned)S.cutter_mm);
       break;
 
     case 2:
@@ -109,6 +109,12 @@ static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S
       snprintf(tmp, sizeof(tmp), "Load Defaults");
       break;
 
+
+    case 17:
+      snprintf(tmp, sizeof(tmp), "Language: %s", (S.uiLang == UILANG_UA) ? "UA" : "EN");
+      break;
+
+
     default:
       snprintf(tmp, sizeof(tmp), "-");
       break;
@@ -183,6 +189,10 @@ MenuAction menuOnDelta(MenuState &m, int8_t step, Settings &S) {
       S.pump_gain_steps_per_u_min = (uint32_t)g;
       return MENU_ACT_NONE;
     }
+    case 17:
+      S.uiLang = (S.uiLang == UILANG_UA) ? UILANG_EN : UILANG_UA;
+      return MENU_ACT_SAVE;
+
 
     default:
       return MENU_ACT_NONE;
@@ -191,21 +201,28 @@ MenuAction menuOnDelta(MenuState &m, int8_t step, Settings &S) {
 
 MenuAction menuOnClick(MenuState &m, Settings &S) {
   if (!m.editing) {
+    // "Action" items (no edit mode)
     if (m.index == 11) return MENU_ACT_CAL_START_60;
     if (m.index == 12) return MENU_ACT_CAL_START_120;
-    if (m.index == 14) return MENU_ACT_CAL_CLEAR;
+    if (m.index == 14) { m.editing = true; return MENU_ACT_NONE; }
     if (m.index == 15) return MENU_ACT_SAVE;
     if (m.index == 16) return MENU_ACT_DEFAULTS;
 
-    if (m.index == 13) return MENU_ACT_NONE; // read-only
+    // Read-only info item
+    if (m.index == 13) return MENU_ACT_NONE;
 
+    // Enter edit mode for editable items (including Language)
     m.editing = true;
     return MENU_ACT_NONE;
   } else {
+    // Exit edit mode.
     m.editing = false;
+    if (m.index == 14) return MENU_ACT_CAL_CLEAR; // confirm clear calibration
+    if (m.index == 17) return MENU_ACT_SAVE;      // persist Language
     return MENU_ACT_NONE;
   }
 }
+
 
 void menuRender3(const MenuState &m, const Settings &S, char line1[21], char line2[21], char line3[21]) {
   // ✅ СТОРІНКИ по 3 пункти, щоб стрілка рухалась по рядках
