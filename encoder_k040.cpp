@@ -1,35 +1,49 @@
 #include "encoder_k040.h"
 #include <EncButton.h>
 
+// Глобальный объект EncButton (нужен для ISR)
+static EncButton eb(2, 3, A3, INPUT, INPUT_PULLUP);  // значения переопределим в begin()
+static bool isrAttached = false;
+
+static void encISR() {
+  eb.tickISR();
+}
+
 void EncoderK040::begin(uint8_t pinA, uint8_t pinB, uint8_t pinBtn) {
-  // Пересоздаём объект, если begin() вызван повторно
-  if (_eb) {
-    delete _eb;
-    _eb = nullptr;
+  _pinA = pinA;
+  _pinB = pinB;
+
+  // Пересоздаем объект, чтобы применились пины/режимы
+  eb = EncButton(pinA, pinB, pinBtn, INPUT, INPUT_PULLUP);
+
+  // KY-040 с RC и подтяжками на модуле: активный LOW, 4 фазы = 1 щелчок
+  eb.setEncType(EB_STEP4_LOW);
+  eb.setBtnLevel(LOW);
+
+  // Включаем ISR-режим чтения энкодера
+  eb.setEncISR(true);
+
+  // Подключаем прерывания один раз
+  if (!isrAttached) {
+    attachInterrupt(digitalPinToInterrupt(_pinA), encISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(_pinB), encISR, CHANGE);
+    isrAttached = true;
   }
 
-  // KY-040 с RC-цепочкой и подтяжками на модуле:
-  // A/B -> INPUT (внешние подтяжки), BTN -> INPUT_PULLUP (кнопка на GND)
-  _eb = new EncButton(pinA, pinB, pinBtn, INPUT, INPUT_PULLUP);
-
-  // Тип энкодера: 4 фазы = 1 щелчок, активный LOW (A=B=1 в покое)
-  _eb->setEncType(EB_STEP4_LOW);
-
-  // Кнопка: активный уровень LOW (замыкает на GND)
-  _eb->setBtnLevel(LOW);
+  _inited = true;
 }
 
 EncoderEvents EncoderK040::poll() {
   EncoderEvents ev;
-  if (!_eb) return ev;
+  if (!_inited) return ev;
 
-  _eb->tick();
+  // Важно: tick() обязателен — он выдаёт события (left/right/click/hold)
+  eb.tick();
 
-  if (_eb->right()) ev.step = +1;
-  else if (_eb->left()) ev.step = -1;
+  if (eb.right()) ev.step = +1;
+  else if (eb.left()) ev.step = -1;
 
-  ev.click = _eb->click();
-  ev.hold  = _eb->hold();
-
+  ev.click = eb.click();
+  ev.hold  = eb.hold();
   return ev;
 }
