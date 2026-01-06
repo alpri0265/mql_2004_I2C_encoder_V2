@@ -1,0 +1,11 @@
+# Тимчасові архіви патчів
+*.zip
+
+# Тимчасові файли Arduino
+*.hex
+*.eep
+*.elf
+
+# Локальні кеші Arduino
+.arduino/
+build/
