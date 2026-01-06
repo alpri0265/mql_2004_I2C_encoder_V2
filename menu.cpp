@@ -35,89 +35,98 @@ static void fmtPadded(char out[21], const char* s) {
   out[20] = '\0';
 }
 
-static void makeItemLine(char out[21], uint8_t idx, bool selected, const Settings &S) {
+// lead: '>' в NAV, '*' в EDIT для активного пункта, ' ' для остальных
+static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S) {
   char b[44];
 
   switch (idx) {
     case 0:
-      snprintf(b, sizeof(b), "%cMaterial: %s", selected ? '>' : ' ',
+      snprintf(b, sizeof(b), "%cMaterial: %s", lead,
                (S.material == MAT_STEEL) ? "Steel" : "Aluminum");
       break;
+
     case 1:
-      snprintf(b, sizeof(b), "%cCutter O: %umm", selected ? '>' : ' ', (unsigned)S.cutter_mm);
+      snprintf(b, sizeof(b), "%cCutter O: %umm", lead, (unsigned)S.cutter_mm);
       break;
+
     case 2:
-      snprintf(b, sizeof(b), "%cMode: %s", selected ? '>' : ' ', (S.mode == MODE_CONT) ? "CONT" : "PULSE");
+      snprintf(b, sizeof(b), "%cMode: %s", lead, (S.mode == MODE_CONT) ? "CONT" : "PULSE");
       break;
+
     case 3:
-      snprintf(b, sizeof(b), "%cPulse ON: %ums", selected ? '>' : ' ', (unsigned)S.pulse_on_ms);
+      snprintf(b, sizeof(b), "%cPulse ON: %ums", lead, (unsigned)S.pulse_on_ms);
       break;
+
     case 4:
-      snprintf(b, sizeof(b), "%cPulse OFF:%ums", selected ? '>' : ' ', (unsigned)S.pulse_off_ms);
+      snprintf(b, sizeof(b), "%cPulse OFF:%ums", lead, (unsigned)S.pulse_off_ms);
       break;
+
     case 5: {
-  uint16_t v = S.kmin_x100;
-  snprintf(b, sizeof(b), "%cKmin: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
-case 6: {
-  uint16_t v = S.kmax_x100;
-  snprintf(b, sizeof(b), "%cKmax: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
-case 7: {
-  uint16_t v = S.al_factor_x100;
-  snprintf(b, sizeof(b), "%cAlFactor: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
+      uint16_t v = S.kmin_x100;
+      snprintf(b, sizeof(b), "%cKmin: %u.%02u", lead,
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
+
+    case 6: {
+      uint16_t v = S.kmax_x100;
+      snprintf(b, sizeof(b), "%cKmax: %u.%02u", lead,
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
+
+    case 7: {
+      uint16_t v = S.al_factor_x100;
+      snprintf(b, sizeof(b), "%cAlFactor: %u.%02u", lead,
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
 
     case 8:
-      snprintf(b, sizeof(b), "%cPOT Avg N: %u", selected ? '>' : ' ', (unsigned)S.pot_avg_N);
+      snprintf(b, sizeof(b), "%cPOT Avg N: %u", lead, (unsigned)S.pot_avg_N);
       break;
+
     case 9: {
-  uint16_t v = S.pot_hyst_x100;
-  snprintf(b, sizeof(b), "%cPOT Hyst: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
+      uint16_t v = S.pot_hyst_x100;
+      snprintf(b, sizeof(b), "%cPOT Hyst: %u.%02u", lead,
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
 
     case 10:
-      snprintf(b, sizeof(b), "%cPumpGain: %lu", selected ? '>' : ' ', (unsigned long)S.pump_gain_steps_per_u_min);
+      snprintf(b, sizeof(b), "%cPumpGain: %lu", lead, (unsigned long)S.pump_gain_steps_per_u_min);
       break;
 
     case 11:
-      snprintf(b, sizeof(b), "%cCalibrate 60s", selected ? '>' : ' ');
+      snprintf(b, sizeof(b), "%cCalibrate 60s", lead);
       break;
 
     case 12:
-      snprintf(b, sizeof(b), "%cCalibrate 120s", selected ? '>' : ' ');
+      snprintf(b, sizeof(b), "%cCalibrate 120s", lead);
       break;
 
     case 13: {
       if (!S.calibrated) {
-        snprintf(b, sizeof(b), "%cCal ml/u: (none)", selected ? '>' : ' ');
+        snprintf(b, sizeof(b), "%cCal ml/u: (none)", lead);
       } else {
         uint32_t x = S.ml_per_u_x1000;
         uint32_t w = x / 1000;
         uint32_t f = (x % 1000) / 10; // 2 decimals
-        snprintf(b, sizeof(b), "%cCal ml/u: %lu.%02lu", selected ? '>' : ' ',
+        snprintf(b, sizeof(b), "%cCal ml/u: %lu.%02lu", lead,
                  (unsigned long)w, (unsigned long)f);
       }
     } break;
 
     case 14:
-      snprintf(b, sizeof(b), "%cClear calibration", selected ? '>' : ' ');
+      snprintf(b, sizeof(b), "%cClear calibration", lead);
       break;
 
     case 15:
-      snprintf(b, sizeof(b), "%cSave EEPROM", selected ? '>' : ' ');
+      snprintf(b, sizeof(b), "%cSave EEPROM", lead);
       break;
 
     case 16:
-      snprintf(b, sizeof(b), "%cLoad Defaults", selected ? '>' : ' ');
+      snprintf(b, sizeof(b), "%cLoad Defaults", lead);
       break;
 
     default:
-      snprintf(b, sizeof(b), "%c-", selected ? '>' : ' ');
+      snprintf(b, sizeof(b), "%c-", lead);
       break;
   }
 
@@ -216,7 +225,14 @@ void menuRender3(const MenuState &m, const Settings &S, char line1[21], char lin
   if (m.index >= 2) top = m.index - 2;
   if (top > ITEM_COUNT - 3) top = ITEM_COUNT - 3;
 
-  makeItemLine(line1, top + 0, (m.index == top + 0), S);
-  makeItemLine(line2, top + 1, (m.index == top + 1), S);
-  makeItemLine(line3, top + 2, (m.index == top + 2), S);
+  for (uint8_t row = 0; row < 3; row++) {
+    uint8_t idx = top + row;
+    bool sel = (m.index == idx);
+
+    char lead = ' ';
+    if (sel) lead = (m.editing ? '*' : '>');
+
+    char* out = (row == 0) ? line1 : (row == 1) ? line2 : line3;
+    makeItemLine(out, idx, lead, S);
+  }
 }
