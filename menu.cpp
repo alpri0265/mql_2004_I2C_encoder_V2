@@ -1,24 +1,6 @@
 #include <Arduino.h>
 #include "menu.h"
 
-// Items:
-// 0 Material
-// 1 Cutter Ø
-// 2 Mode
-// 3 Pulse ON
-// 4 Pulse OFF
-// 5 Kmin
-// 6 Kmax
-// 7 AlFactor
-// 8 POT Avg N
-// 9 POT Hyst
-// 10 Pump Gain
-// 11 Calibrate 60s (action)
-// 12 Calibrate 120s (action)
-// 13 Cal ml/u (read-only)
-// 14 Clear Cal (action)
-// 15 Save EEPROM (action)
-// 16 Load Defaults (action)
 static constexpr uint8_t ITEM_COUNT = 17;
 
 static int32_t clampI32(int32_t v, int32_t lo, int32_t hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
@@ -28,100 +10,114 @@ void menuReset(MenuState &m) {
   m.editing = false;
 }
 
-static void fmtPadded(char out[21], const char* s) {
+// 19 символів тексту + '\0' (бо out[0] = маркер)
+static void pad19(char out19[20], const char* s) {
   uint8_t i = 0;
-  for (; i < 20 && s[i]; i++) out[i] = s[i];
-  for (; i < 20; i++) out[i] = ' ';
-  out[20] = '\0';
+  for (; i < 19 && s[i]; i++) out19[i] = s[i];
+  for (; i < 19; i++) out19[i] = ' ';
+  out19[19] = '\0';
 }
 
-static void makeItemLine(char out[21], uint8_t idx, bool selected, const Settings &S) {
-  char b[44];
+static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S) {
+  out[0] = lead;
+
+  char tmp[40];
 
   switch (idx) {
     case 0:
-      snprintf(b, sizeof(b), "%cMaterial: %s", selected ? '>' : ' ',
+      snprintf(tmp, sizeof(tmp), "Material: %s",
                (S.material == MAT_STEEL) ? "Steel" : "Aluminum");
       break;
+
     case 1:
-      snprintf(b, sizeof(b), "%cCutter O: %umm", selected ? '>' : ' ', (unsigned)S.cutter_mm);
+      snprintf(tmp, sizeof(tmp), "Cutter O: %umm", (unsigned)S.cutter_mm);
       break;
+
     case 2:
-      snprintf(b, sizeof(b), "%cMode: %s", selected ? '>' : ' ', (S.mode == MODE_CONT) ? "CONT" : "PULSE");
+      snprintf(tmp, sizeof(tmp), "Mode: %s", (S.mode == MODE_CONT) ? "CONT" : "PULSE");
       break;
+
     case 3:
-      snprintf(b, sizeof(b), "%cPulse ON: %ums", selected ? '>' : ' ', (unsigned)S.pulse_on_ms);
+      snprintf(tmp, sizeof(tmp), "Pulse ON: %ums", (unsigned)S.pulse_on_ms);
       break;
+
     case 4:
-      snprintf(b, sizeof(b), "%cPulse OFF:%ums", selected ? '>' : ' ', (unsigned)S.pulse_off_ms);
+      snprintf(tmp, sizeof(tmp), "Pulse OFF: %ums", (unsigned)S.pulse_off_ms);
       break;
+
     case 5: {
-  uint16_t v = S.kmin_x100;
-  snprintf(b, sizeof(b), "%cKmin: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
-case 6: {
-  uint16_t v = S.kmax_x100;
-  snprintf(b, sizeof(b), "%cKmax: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
-case 7: {
-  uint16_t v = S.al_factor_x100;
-  snprintf(b, sizeof(b), "%cAlFactor: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
+      uint16_t v = S.kmin_x100;
+      snprintf(tmp, sizeof(tmp), "Kmin: %u.%02u",
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
+
+    case 6: {
+      uint16_t v = S.kmax_x100;
+      snprintf(tmp, sizeof(tmp), "Kmax: %u.%02u",
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
+
+    case 7: {
+      uint16_t v = S.al_factor_x100;
+      snprintf(tmp, sizeof(tmp), "AlFactor: %u.%02u",
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
 
     case 8:
-      snprintf(b, sizeof(b), "%cPOT Avg N: %u", selected ? '>' : ' ', (unsigned)S.pot_avg_N);
+      snprintf(tmp, sizeof(tmp), "POT Avg N: %u", (unsigned)S.pot_avg_N);
       break;
+
     case 9: {
-  uint16_t v = S.pot_hyst_x100;
-  snprintf(b, sizeof(b), "%cPOT Hyst: %u.%02u", selected ? '>' : ' ',
-           (unsigned)(v / 100), (unsigned)(v % 100));
-} break;
+      uint16_t v = S.pot_hyst_x100;
+      snprintf(tmp, sizeof(tmp), "POT Hyst: %u.%02u",
+               (unsigned)(v / 100), (unsigned)(v % 100));
+    } break;
 
     case 10:
-      snprintf(b, sizeof(b), "%cPumpGain: %lu", selected ? '>' : ' ', (unsigned long)S.pump_gain_steps_per_u_min);
+      snprintf(tmp, sizeof(tmp), "PumpGain: %lu", (unsigned long)S.pump_gain_steps_per_u_min);
       break;
 
     case 11:
-      snprintf(b, sizeof(b), "%cCalibrate 60s", selected ? '>' : ' ');
+      snprintf(tmp, sizeof(tmp), "Calibrate 60s");
       break;
 
     case 12:
-      snprintf(b, sizeof(b), "%cCalibrate 120s", selected ? '>' : ' ');
+      snprintf(tmp, sizeof(tmp), "Calibrate 120s");
       break;
 
-    case 13: {
+    case 13:
       if (!S.calibrated) {
-        snprintf(b, sizeof(b), "%cCal ml/u: (none)", selected ? '>' : ' ');
+        snprintf(tmp, sizeof(tmp), "Cal ml/u: (none)");
       } else {
         uint32_t x = S.ml_per_u_x1000;
         uint32_t w = x / 1000;
         uint32_t f = (x % 1000) / 10; // 2 decimals
-        snprintf(b, sizeof(b), "%cCal ml/u: %lu.%02lu", selected ? '>' : ' ',
+        snprintf(tmp, sizeof(tmp), "Cal ml/u: %lu.%02lu",
                  (unsigned long)w, (unsigned long)f);
       }
-    } break;
+      break;
 
     case 14:
-      snprintf(b, sizeof(b), "%cClear calibration", selected ? '>' : ' ');
+      snprintf(tmp, sizeof(tmp), "Clear calibration");
       break;
 
     case 15:
-      snprintf(b, sizeof(b), "%cSave EEPROM", selected ? '>' : ' ');
+      snprintf(tmp, sizeof(tmp), "Save EEPROM");
       break;
 
     case 16:
-      snprintf(b, sizeof(b), "%cLoad Defaults", selected ? '>' : ' ');
+      snprintf(tmp, sizeof(tmp), "Load Defaults");
       break;
 
     default:
-      snprintf(b, sizeof(b), "%c-", selected ? '>' : ' ');
+      snprintf(tmp, sizeof(tmp), "-");
       break;
   }
 
-  fmtPadded(out, b);
+  char padded[20];
+  pad19(padded, tmp);
+  for (uint8_t i = 0; i < 19; i++) out[1 + i] = padded[i];
+  out[20] = '\0';
 }
 
 MenuAction menuOnDelta(MenuState &m, int8_t step, Settings &S) {
@@ -212,11 +208,18 @@ MenuAction menuOnClick(MenuState &m, Settings &S) {
 }
 
 void menuRender3(const MenuState &m, const Settings &S, char line1[21], char line2[21], char line3[21]) {
-  uint8_t top = 0;
-  if (m.index >= 2) top = m.index - 2;
+  // ✅ СТОРІНКИ по 3 пункти, щоб стрілка рухалась по рядках
+  uint8_t top = (m.index / 3) * 3;
   if (top > ITEM_COUNT - 3) top = ITEM_COUNT - 3;
 
-  makeItemLine(line1, top + 0, (m.index == top + 0), S);
-  makeItemLine(line2, top + 1, (m.index == top + 1), S);
-  makeItemLine(line3, top + 2, (m.index == top + 2), S);
+  for (uint8_t row = 0; row < 3; row++) {
+    uint8_t idx = top + row;
+    bool sel = (m.index == idx);
+
+    char lead = ' ';
+    if (sel) lead = (m.editing ? '*' : '>');
+
+    char* out = (row == 0) ? line1 : (row == 1) ? line2 : line3;
+    makeItemLine(out, idx, lead, S);
+  }
 }

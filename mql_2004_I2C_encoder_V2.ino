@@ -12,7 +12,8 @@
 static AppState state = ST_READY;
 static MenuState menu;
 
-static bool wizardDone = false;  // Wizard один раз, дальше START/STOP
+// ✅ START з READY одразу запускає RUN (Wizard тільки вручну)
+static bool wizardDone = true;
 
 static int32_t rec_x100 = 55;
 static int32_t potMin_x100 = 27;
@@ -39,6 +40,11 @@ static uint32_t calDurationMs = 60000UL;
 
 static int32_t calMeasuredMl_x100 = 0; // 0..9999 (0.00..99.99 ml)
 static uint8_t calDigitIdx = 0;        // 0..3 (tens, ones, tenths, hundredths)
+
+// ===== MENU EDIT BACKUP (для CANCEL) =====
+static Settings _menuBackup;
+static bool     _menuBackupValid = false;
+// =========================================
 
 static int32_t clampI32(int32_t v, int32_t lo, int32_t hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
 
@@ -85,6 +91,7 @@ static void enterMenu() {
   }
   state = ST_MENU;
   menuReset(menu);
+  _menuBackupValid = false;
   uiClear();
 }
 
@@ -250,11 +257,6 @@ void loop() {
       startRawPrev = sNow;
     }
 
-    // LONG OK -> Wizard safely
-    if (ev.encLong) {
-      enterWizardSafe();
-    }
-
     // HARD DIA accel override (only in ST_WIZ_DIA)
     if (state == ST_WIZ_DIA) {
       // ignore ev.encStep from input.cpp here
@@ -299,7 +301,10 @@ void loop() {
 
     // OK short
     if (ev.encClick) {
-      if (state == ST_WIZ_MAT) {
+      if (state == ST_READY) {
+        // ✅ READY: коротке OK відкриває MENU
+        enterMenu();
+      } else if (state == ST_WIZ_MAT) {
         state = ST_WIZ_DIA;
         uiClear();
       } else if (state == ST_WIZ_DIA) {
@@ -307,7 +312,16 @@ void loop() {
         state = ST_WIZ_REC;
         uiClear();
       } else if (state == ST_MENU) {
+        bool wasEditing = menu.editing;
+        if (!wasEditing) {
+          _menuBackup = S;
+          _menuBackupValid = true;
+        }
+
         MenuAction act = menuOnClick(menu, S);
+
+        if (!menu.editing) _menuBackupValid = false;
+        if (wasEditing && !menu.editing) _menuBackupValid = false;
 
         if (act == MENU_ACT_SAVE) {
           settingsSave();
@@ -333,28 +347,46 @@ void loop() {
           saveCalibrationFromInput();
           state = ST_MENU;
           menuReset(menu);
+          _menuBackupValid = false;
           uiClear();
         }
       }
     }
 
-    // MENU/BACK short
+    // MENU/BACK (hold)
     if (ev.menuClick) {
+
+      // ✅ READY: довге натискання відкриває Wizard
       if (state == ST_READY) {
-        enterMenu();
-      } else if (state == ST_WIZ_REC || state == ST_RUN) {
+        enterWizardSafe();
+      }
+      // CANCEL in MENU editing
+      else if (state == ST_MENU && menu.editing) {
+        if (_menuBackupValid) {
+          S = _menuBackup;
+        }
+        menu.editing = false;
+        _menuBackupValid = false;
+        recomputeRecAndRange();
+        uiClear();
+      }
+      // old BACK behavior
+      else if (state == ST_WIZ_REC || state == ST_RUN) {
         enterMenu();
       } else if (state == ST_MENU) {
         state = ST_READY;
+        _menuBackupValid = false;
         uiClear();
       } else if (state == ST_CAL_RUN) {
         stopCalibrationPump();
         state = ST_MENU;
         menuReset(menu);
+        _menuBackupValid = false;
         uiClear();
       } else if (state == ST_CAL_INPUT) {
         state = ST_MENU;
         menuReset(menu);
+        _menuBackupValid = false;
         uiClear();
       }
     }
@@ -362,13 +394,8 @@ void loop() {
     // START/STOP
     if (ev.startClick) {
       if (state == ST_READY) {
-        if (!wizardDone) {
-          state = ST_WIZ_MAT;
-          uiClear();
-        } else {
-          recomputeRecAndRange();
-          startRun();
-        }
+        recomputeRecAndRange();
+        startRun();
       } else if (state == ST_WIZ_MAT || state == ST_WIZ_DIA) {
         state = ST_READY;
         uiClear();
@@ -379,20 +406,22 @@ void loop() {
         stopRunToReady();
       } else if (state == ST_MENU) {
         state = ST_READY;
+        _menuBackupValid = false;
         uiClear();
       } else if (state == ST_CAL_RUN) {
         stopCalibrationPump();
         state = ST_MENU;
         menuReset(menu);
+        _menuBackupValid = false;
         uiClear();
       } else if (state == ST_CAL_INPUT) {
         state = ST_MENU;
         menuReset(menu);
+        _menuBackupValid = false;
         uiClear();
       }
     }
 
-    // Отладка (для проверки, что приходит от энкодера)
     if (ev.encStep != 0) {
       Serial.print("encStep: "); Serial.print(ev.encStep);
       Serial.print(" | state: "); Serial.println(state);

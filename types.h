@@ -52,8 +52,9 @@ struct Settings {
 
 // Структура событий энкодера
 struct EncoderEvents {
-  int8_t  step = 0;
-  bool    click = false;
+  int8_t  step  = 0;   // +1/-1 на один "щелчок"
+  bool    click = false; // короткое нажатие
+  bool    hold  = false; // длительное нажатие
 };
 
 // Глобальная переменная настроек
