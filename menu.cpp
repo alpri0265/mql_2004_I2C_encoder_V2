@@ -201,23 +201,27 @@ MenuAction menuOnDelta(MenuState &m, int8_t step, Settings &S) {
 
 MenuAction menuOnClick(MenuState &m, Settings &S) {
   if (!m.editing) {
+    // "Action" items (no edit mode)
     if (m.index == 11) return MENU_ACT_CAL_START_60;
     if (m.index == 12) return MENU_ACT_CAL_START_120;
     if (m.index == 14) return MENU_ACT_CAL_CLEAR;
     if (m.index == 15) return MENU_ACT_SAVE;
     if (m.index == 16) return MENU_ACT_DEFAULTS;
 
-    
-    if (m.index == 17) return MENU_ACT_SAVE;
-if (m.index == 13) return MENU_ACT_NONE; // read-only
+    // Read-only info item
+    if (m.index == 13) return MENU_ACT_NONE;
 
+    // Enter edit mode for editable items (including Language)
     m.editing = true;
     return MENU_ACT_NONE;
   } else {
+    // Exit edit mode. For Language, we want to persist selection in EEPROM.
     m.editing = false;
+    if (m.index == 17) return MENU_ACT_SAVE;
     return MENU_ACT_NONE;
   }
 }
+
 
 void menuRender3(const MenuState &m, const Settings &S, char line1[21], char line2[21], char line3[21]) {
   // ✅ СТОРІНКИ по 3 пункти, щоб стрілка рухалась по рядках
