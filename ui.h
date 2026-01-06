@@ -8,7 +8,8 @@ void uiDrawReady(const Settings &S);
 void uiDrawWizMaterial(const Settings &S);
 void uiDrawWizDiameter(const Settings &S);
 void uiDrawWizRecommend(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100, int32_t potMin_u_x100, int32_t potMax_u_x100);
-void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100, bool running);
+void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100,
+               int32_t potMin_u_x100, int32_t potMax_u_x100, bool running);
 
 void uiDrawMenu(bool editing, const char line1[21], const char line2[21], const char line3[21]);
 
