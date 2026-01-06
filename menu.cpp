@@ -28,109 +28,117 @@ void menuReset(MenuState &m) {
   m.editing = false;
 }
 
-static void fmtPadded(char out[21], const char* s) {
+// Записуємо рівно 20 символів + '\0'
+static void pad19(char out19[20], const char* s) {
   uint8_t i = 0;
-  for (; i < 20 && s[i]; i++) out[i] = s[i];
-  for (; i < 20; i++) out[i] = ' ';
-  out[20] = '\0';
+  for (; i < 19 && s[i]; i++) out19[i] = s[i];
+  for (; i < 19; i++) out19[i] = ' ';
+  out19[19] = '\0';
 }
 
-// lead: '>' в NAV, '*' в EDIT для активного пункта, ' ' для остальных
 static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S) {
-  char b[44];
+  // Завжди: out[0] = lead (стрілка), а текст починається з out[1]
+  out[0] = lead;
+
+  char tmp[40];   // текст без першого символу-стрілки
 
   switch (idx) {
     case 0:
-      snprintf(b, sizeof(b), "%cMaterial: %s", lead,
+      snprintf(tmp, sizeof(tmp), "Material: %s",
                (S.material == MAT_STEEL) ? "Steel" : "Aluminum");
       break;
 
     case 1:
-      snprintf(b, sizeof(b), "%cCutter O: %umm", lead, (unsigned)S.cutter_mm);
+      snprintf(tmp, sizeof(tmp), "Cutter O: %umm", (unsigned)S.cutter_mm);
       break;
 
     case 2:
-      snprintf(b, sizeof(b), "%cMode: %s", lead, (S.mode == MODE_CONT) ? "CONT" : "PULSE");
+      snprintf(tmp, sizeof(tmp), "Mode: %s", (S.mode == MODE_CONT) ? "CONT" : "PULSE");
       break;
 
     case 3:
-      snprintf(b, sizeof(b), "%cPulse ON: %ums", lead, (unsigned)S.pulse_on_ms);
+      snprintf(tmp, sizeof(tmp), "Pulse ON: %ums", (unsigned)S.pulse_on_ms);
       break;
 
     case 4:
-      snprintf(b, sizeof(b), "%cPulse OFF:%ums", lead, (unsigned)S.pulse_off_ms);
+      snprintf(tmp, sizeof(tmp), "Pulse OFF: %ums", (unsigned)S.pulse_off_ms);
       break;
 
     case 5: {
       uint16_t v = S.kmin_x100;
-      snprintf(b, sizeof(b), "%cKmin: %u.%02u", lead,
+      snprintf(tmp, sizeof(tmp), "Kmin: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 6: {
       uint16_t v = S.kmax_x100;
-      snprintf(b, sizeof(b), "%cKmax: %u.%02u", lead,
+      snprintf(tmp, sizeof(tmp), "Kmax: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 7: {
       uint16_t v = S.al_factor_x100;
-      snprintf(b, sizeof(b), "%cAlFactor: %u.%02u", lead,
+      snprintf(tmp, sizeof(tmp), "AlFactor: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 8:
-      snprintf(b, sizeof(b), "%cPOT Avg N: %u", lead, (unsigned)S.pot_avg_N);
+      snprintf(tmp, sizeof(tmp), "POT Avg N: %u", (unsigned)S.pot_avg_N);
       break;
 
     case 9: {
       uint16_t v = S.pot_hyst_x100;
-      snprintf(b, sizeof(b), "%cPOT Hyst: %u.%02u", lead,
+      snprintf(tmp, sizeof(tmp), "POT Hyst: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 10:
-      snprintf(b, sizeof(b), "%cPumpGain: %lu", lead, (unsigned long)S.pump_gain_steps_per_u_min);
+      snprintf(tmp, sizeof(tmp), "PumpGain: %lu", (unsigned long)S.pump_gain_steps_per_u_min);
       break;
 
     case 11:
-      snprintf(b, sizeof(b), "%cCalibrate 60s", lead);
+      snprintf(tmp, sizeof(tmp), "Calibrate 60s");
       break;
 
     case 12:
-      snprintf(b, sizeof(b), "%cCalibrate 120s", lead);
+      snprintf(tmp, sizeof(tmp), "Calibrate 120s");
       break;
 
-    case 13: {
+    case 13:
       if (!S.calibrated) {
-        snprintf(b, sizeof(b), "%cCal ml/u: (none)", lead);
+        snprintf(tmp, sizeof(tmp), "Cal ml/u: (none)");
       } else {
         uint32_t x = S.ml_per_u_x1000;
         uint32_t w = x / 1000;
         uint32_t f = (x % 1000) / 10; // 2 decimals
-        snprintf(b, sizeof(b), "%cCal ml/u: %lu.%02lu", lead,
+        snprintf(tmp, sizeof(tmp), "Cal ml/u: %lu.%02lu",
                  (unsigned long)w, (unsigned long)f);
       }
-    } break;
+      break;
 
     case 14:
-      snprintf(b, sizeof(b), "%cClear calibration", lead);
+      snprintf(tmp, sizeof(tmp), "Clear calibration");
       break;
 
     case 15:
-      snprintf(b, sizeof(b), "%cSave EEPROM", lead);
+      snprintf(tmp, sizeof(tmp), "Save EEPROM");
       break;
 
     case 16:
-      snprintf(b, sizeof(b), "%cLoad Defaults", lead);
+      snprintf(tmp, sizeof(tmp), "Load Defaults");
       break;
 
     default:
-      snprintf(b, sizeof(b), "%c-", lead);
+      snprintf(tmp, sizeof(tmp), "-");
       break;
   }
 
-  fmtPadded(out, b);
+  // Запис у out[1..19] + паддінг пробілами
+  char padded[20];
+  pad19(padded, tmp);
+
+  for (uint8_t i = 0; i < 19; i++) out[1 + i] = padded[i];
+  out[20] = '\0';
 }
 
 MenuAction menuOnDelta(MenuState &m, int8_t step, Settings &S) {
