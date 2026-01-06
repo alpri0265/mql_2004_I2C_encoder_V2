@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "config.h"
 #include "ui.h"
+#include "ui_print.h"
 
 static LiquidCrystal_I2C lcd(LCD_I2C_ADDR, 20, 4);
 
@@ -48,6 +49,7 @@ void uiBegin() {
   Wire.begin();
   lcd.init();
   lcd.backlight();
+  uiPrintInit(&lcd);
   lcd.clear();
   lastValid = false;
   setLastBlank();
