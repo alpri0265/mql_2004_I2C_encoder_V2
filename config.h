@@ -29,7 +29,8 @@ constexpr uint8_t PIN_BTN_OK   = A3;      // ENC BTN     (to GND via encoder)
 constexpr uint8_t ENC_DETENT_EDGES = 4;  // 4 = типично для KY-040, 2 = для некоторых EC11
 
 // Инверсия направления энкодера (0/1)
-constexpr bool ENC_INVERT_DIR = false;
+//constexpr bool ENC_INVERT_DIR = false;
+constexpr bool ENC_INVERT_DIR = true;
 
 // Микро-защита от дребезга: слишком быстрые изменения A/B игнорируются
 // (для KY-040 помогает убрать "фантомные" шаги)
