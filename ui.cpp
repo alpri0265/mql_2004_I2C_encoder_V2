@@ -28,12 +28,10 @@ static void pad20(char out[21], const char* s) {
 
 static void drawRow(uint8_t row, const char line[21]) {
   if (!lastValid) setLastBlank();
-
   if (memcmp(last4[row], line, 20) == 0) return;
 
   lcd.setCursor(0, row);
   for (uint8_t i = 0; i < 20; i++) lcd.write(line[i]);
-
   memcpy(last4[row], line, 21);
 }
 
@@ -59,55 +57,53 @@ void uiClear() {
   setLastBlank();
 }
 
-// Нижче — прості екрани (як було), головне для нас — uiDrawMenu()
-
 static const char* matStr(const Settings &S) {
-  return (S.material == MAT_STEEL) ? "Steel" : "Alum";
+  return (S.material == MAT_STEEL) ? "Сталь" : "Алюм";
 }
 static const char* modeStr(const Settings &S) {
-  return (S.mode == MODE_CONT) ? "CONT" : "PULSE";
+  return (S.mode == MODE_CONT) ? "ПОСТ" : "ІМП";
 }
 
 void uiDrawReady(const Settings &S) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "READY");
+  pad20(l0, "ГОТОВО");
   {
     char b[32];
-    snprintf(b, sizeof(b), "Mat:%s  O:%umm", matStr(S), (unsigned)S.cutter_mm);
+    snprintf(b, sizeof(b), "Мат:%s  O:%umm", matStr(S), (unsigned)S.cutter_mm);
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Mode:%s", modeStr(S));
+    snprintf(b, sizeof(b), "Режим:%s", modeStr(S));
     pad20(l2, b);
   }
-  pad20(l3, "OK:Menu  START:Run");
+  pad20(l3, "OK:Меню  START:Пуск");
   draw4(l0, l1, l2, l3);
 }
 
 void uiDrawWizMaterial(const Settings &S) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "WIZARD: MATERIAL");
+  pad20(l0, "МАЙСТЕР: МАТЕРІАЛ");
   {
     char b[32];
     snprintf(b, sizeof(b), "> %s", matStr(S));
     pad20(l1, b);
   }
-  pad20(l2, "Turn: change");
-  pad20(l3, "OK:Next  MENU:Back");
+  pad20(l2, "Крути: змінити");
+  pad20(l3, "OK:Далі  MENU:Назад");
   draw4(l0, l1, l2, l3);
 }
 
 void uiDrawWizDiameter(const Settings &S) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "WIZARD: CUTTER O");
+  pad20(l0, "МАЙСТЕР: ФРЕЗА O");
   {
     char b[32];
     snprintf(b, sizeof(b), "> %umm", (unsigned)S.cutter_mm);
     pad20(l1, b);
   }
-  pad20(l2, "Turn: change");
-  pad20(l3, "OK:Next  MENU:Back");
+  pad20(l2, "Крути: змінити");
+  pad20(l3, "OK:Далі  MENU:Назад");
   draw4(l0, l1, l2, l3);
 }
 
@@ -115,16 +111,16 @@ void uiDrawWizRecommend(const Settings &S, int32_t rec_u_x100, int32_t set_u_x10
                         int32_t potMin_u_x100, int32_t potMax_u_x100) {
   (void)S;
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "WIZARD: RECOMMEND");
+  pad20(l0, "МАЙСТЕР: РЕКОМЕНД.");
   {
     char b[32];
-    snprintf(b, sizeof(b), "Rec: %ld.%02ld u",
+    snprintf(b, sizeof(b), "Рек: %ld.%02ld од",
              (long)(rec_u_x100 / 100), (long)(abs(rec_u_x100) % 100));
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Set: %ld.%02ld u",
+    snprintf(b, sizeof(b), "Вст: %ld.%02ld од",
              (long)(set_u_x100 / 100), (long)(abs(set_u_x100) % 100));
     pad20(l2, b);
   }
@@ -141,69 +137,66 @@ void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100, bool r
   char l0[21], l1[21], l2[21], l3[21];
   {
     char b[32];
-    snprintf(b, sizeof(b), "RUN: %s", running ? "ON" : "OFF");
+    snprintf(b, sizeof(b), "РОБОТА: %s", running ? "ВКЛ" : "ВИКЛ");
     pad20(l0, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Rec:%ld.%02ld  %s",
+    snprintf(b, sizeof(b), "Рек:%ld.%02ld  %s",
              (long)(rec_u_x100 / 100), (long)(abs(rec_u_x100) % 100), modeStr(S));
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Set:%ld.%02ld  O:%u",
+    snprintf(b, sizeof(b), "Вст:%ld.%02ld  O:%u",
              (long)(set_u_x100 / 100), (long)(abs(set_u_x100) % 100), (unsigned)S.cutter_mm);
     pad20(l2, b);
   }
-  pad20(l3, "START:Toggle  OK:Menu");
+  pad20(l3, "START:Стоп  OK:Меню");
   draw4(l0, l1, l2, l3);
 }
 
-// ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: НЕ ТРОГАТЬ line1/2/3[0]
 void uiDrawMenu(bool editing, const char line1[21], const char line2[21], const char line3[21]) {
   char l0[21];
-  if (editing) pad20(l0, "MENU (EDIT)");
-  else         pad20(l0, "MENU");
-
-  // line1..3 уже 20-символьные строки с маркером в [0]
+  if (editing) pad20(l0, "МЕНЮ (РЕДАГ.)");
+  else         pad20(l0, "МЕНЮ");
   draw4(l0, line1, line2, line3);
 }
 
 void uiDrawCalRun(uint16_t totalSec, uint16_t secondsLeft) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "CALIBRATION RUN");
+  pad20(l0, "КАЛІБРУВАННЯ");
   {
     char b[32];
-    snprintf(b, sizeof(b), "Total: %us", (unsigned)totalSec);
+    snprintf(b, sizeof(b), "Трив: %us", (unsigned)totalSec);
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Left : %us", (unsigned)secondsLeft);
+    snprintf(b, sizeof(b), "Зал:  %us", (unsigned)secondsLeft);
     pad20(l2, b);
   }
-  pad20(l3, "MENU:Abort");
+  pad20(l3, "MENU:Скасувати");
   draw4(l0, l1, l2, l3);
 }
 
 void uiDrawCalInputDigits(int32_t ml_x100, uint8_t digitIdx) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "CAL: ENTER ml/60s");
+  pad20(l0, "КАЛ: ВВЕДИ мл/60с");
 
   int32_t w = ml_x100 / 100;
   int32_t f = abs(ml_x100) % 100;
 
   {
     char b[32];
-    snprintf(b, sizeof(b), "Value: %ld.%02ld ml", (long)w, (long)f);
+    snprintf(b, sizeof(b), "Знач: %ld.%02ld мл", (long)w, (long)f);
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Digit: %u", (unsigned)digitIdx);
+    snprintf(b, sizeof(b), "Розряд: %u", (unsigned)digitIdx);
     pad20(l2, b);
   }
-  pad20(l3, "Turn:chg OK:Next MENU");
+  pad20(l3, "Крути:зм  OK:Далі");
   draw4(l0, l1, l2, l3);
 }

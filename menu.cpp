@@ -25,88 +25,88 @@ static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S
 
   switch (idx) {
     case 0:
-      snprintf(tmp, sizeof(tmp), "Material: %s",
-               (S.material == MAT_STEEL) ? "Steel" : "Aluminum");
+      snprintf(tmp, sizeof(tmp), "Матеріал: %s",
+               (S.material == MAT_STEEL) ? "Сталь" : "Алюм");
       break;
 
     case 1:
-      snprintf(tmp, sizeof(tmp), "Cutter O: %umm", (unsigned)S.cutter_mm);
+      snprintf(tmp, sizeof(tmp), "Фреза O: %umm", (unsigned)S.cutter_mm);
       break;
 
     case 2:
-      snprintf(tmp, sizeof(tmp), "Mode: %s", (S.mode == MODE_CONT) ? "CONT" : "PULSE");
+      snprintf(tmp, sizeof(tmp), "Режим: %s", (S.mode == MODE_CONT) ? "ПОСТ" : "ІМП");
       break;
 
     case 3:
-      snprintf(tmp, sizeof(tmp), "Pulse ON: %ums", (unsigned)S.pulse_on_ms);
+      snprintf(tmp, sizeof(tmp), "Імп ВКЛ: %ums", (unsigned)S.pulse_on_ms);
       break;
 
     case 4:
-      snprintf(tmp, sizeof(tmp), "Pulse OFF: %ums", (unsigned)S.pulse_off_ms);
+      snprintf(tmp, sizeof(tmp), "Імп ВИК: %ums", (unsigned)S.pulse_off_ms);
       break;
 
     case 5: {
       uint16_t v = S.kmin_x100;
-      snprintf(tmp, sizeof(tmp), "Kmin: %u.%02u",
+      snprintf(tmp, sizeof(tmp), "Kмін: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 6: {
       uint16_t v = S.kmax_x100;
-      snprintf(tmp, sizeof(tmp), "Kmax: %u.%02u",
+      snprintf(tmp, sizeof(tmp), "Kмакс: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 7: {
       uint16_t v = S.al_factor_x100;
-      snprintf(tmp, sizeof(tmp), "AlFactor: %u.%02u",
+      snprintf(tmp, sizeof(tmp), "Коеф Al: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 8:
-      snprintf(tmp, sizeof(tmp), "POT Avg N: %u", (unsigned)S.pot_avg_N);
+      snprintf(tmp, sizeof(tmp), "POT усер N: %u", (unsigned)S.pot_avg_N);
       break;
 
     case 9: {
       uint16_t v = S.pot_hyst_x100;
-      snprintf(tmp, sizeof(tmp), "POT Hyst: %u.%02u",
+      snprintf(tmp, sizeof(tmp), "POT гіст: %u.%02u",
                (unsigned)(v / 100), (unsigned)(v % 100));
     } break;
 
     case 10:
-      snprintf(tmp, sizeof(tmp), "PumpGain: %lu", (unsigned long)S.pump_gain_steps_per_u_min);
+      snprintf(tmp, sizeof(tmp), "Підсил: %lu", (unsigned long)S.pump_gain_steps_per_u_min);
       break;
 
     case 11:
-      snprintf(tmp, sizeof(tmp), "Calibrate 60s");
+      snprintf(tmp, sizeof(tmp), "Калібр 60с");
       break;
 
     case 12:
-      snprintf(tmp, sizeof(tmp), "Calibrate 120s");
+      snprintf(tmp, sizeof(tmp), "Калібр 120с");
       break;
 
     case 13:
       if (!S.calibrated) {
-        snprintf(tmp, sizeof(tmp), "Cal ml/u: (none)");
+        snprintf(tmp, sizeof(tmp), "Кал мл/од: (—)");
       } else {
         uint32_t x = S.ml_per_u_x1000;
         uint32_t w = x / 1000;
         uint32_t f = (x % 1000) / 10; // 2 decimals
-        snprintf(tmp, sizeof(tmp), "Cal ml/u: %lu.%02lu",
+        snprintf(tmp, sizeof(tmp), "Кал мл/од: %lu.%02lu",
                  (unsigned long)w, (unsigned long)f);
       }
       break;
 
     case 14:
-      snprintf(tmp, sizeof(tmp), "Clear calibration");
+      snprintf(tmp, sizeof(tmp), "Скинути калібр");
       break;
 
     case 15:
-      snprintf(tmp, sizeof(tmp), "Save EEPROM");
+      snprintf(tmp, sizeof(tmp), "Зберегти EEPROM");
       break;
 
     case 16:
-      snprintf(tmp, sizeof(tmp), "Load Defaults");
+      snprintf(tmp, sizeof(tmp), "Скинути за замов");
       break;
 
     default:
@@ -208,7 +208,7 @@ MenuAction menuOnClick(MenuState &m, Settings &S) {
 }
 
 void menuRender3(const MenuState &m, const Settings &S, char line1[21], char line2[21], char line3[21]) {
-  // ✅ СТОРІНКИ по 3 пункти, щоб стрілка рухалась по рядках
+  // сторінки по 3 пункти (щоб курсор рухався рядками)
   uint8_t top = (m.index / 3) * 3;
   if (top > ITEM_COUNT - 3) top = ITEM_COUNT - 3;
 
