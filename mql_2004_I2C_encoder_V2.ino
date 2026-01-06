@@ -12,7 +12,8 @@
 static AppState state = ST_READY;
 static MenuState menu;
 
-static bool wizardDone = false;  // Wizard один раз, дальше START/STOP
+//static bool wizardDone = false;  // Wizard один раз, дальше START/STOP
+static bool wizardDone = true;   // START з READY одразу запускає RUN (Wizard тільки вручну)
 
 static int32_t rec_x100 = 55;
 static int32_t potMin_x100 = 27;
