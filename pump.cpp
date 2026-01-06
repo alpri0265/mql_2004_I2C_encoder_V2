@@ -77,7 +77,7 @@ void pumpBegin() {
 
   digitalWrite(PIN_STEP, LOW);
   digitalWrite(PIN_DIR, HIGH);   // направление любое
-  digitalWrite(PIN_ENA, LOW);    // disabled initially
+  digitalWrite(PIN_ENA, HIGH);   // ENA polarity inverted: HIGH = disabled (for your wiring)
 
   timer1Init();
 }
@@ -89,7 +89,7 @@ void pumpSetEnable(bool en) {
   else    TIMSK1 &= ~(1 << OCIE1A);
 
   // ENA у тебя аппаратно не используется, но оставим как было
-  digitalWrite(PIN_ENA, en ? HIGH : LOW);
+  digitalWrite(PIN_ENA, en ? LOW : HIGH);  // ENA polarity inverted: LOW=enable, HIGH=disable
 }
 
 void pumpStartSteps(uint32_t stepsPerSec) {
@@ -105,7 +105,7 @@ void pumpStartSteps(uint32_t stepsPerSec) {
 void pumpStop() {
   stepEnable = false;
   TIMSK1 &= ~(1 << OCIE1A);
-  digitalWrite(PIN_ENA, LOW);
+  digitalWrite(PIN_ENA, HIGH);  // disable (inverted)
 }
 
 void pumpRunCont(int32_t flow_x100, uint32_t pumpGain) {
