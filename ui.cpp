@@ -58,52 +58,52 @@ void uiClear() {
 }
 
 static const char* matStr(const Settings &S) {
-  return (S.material == MAT_STEEL) ? "Сталь" : "Алюм";
+  return (S.material == MAT_STEEL) ? "Stal" : "Alum";
 }
 static const char* modeStr(const Settings &S) {
-  return (S.mode == MODE_CONT) ? "ПОСТ" : "ІМП";
+  return (S.mode == MODE_CONT) ? "POST" : "IMP";
 }
 
 void uiDrawReady(const Settings &S) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "ГОТОВО");
+  pad20(l0, "GOTOVO");
   {
     char b[32];
-    snprintf(b, sizeof(b), "Мат:%s  O:%umm", matStr(S), (unsigned)S.cutter_mm);
+    snprintf(b, sizeof(b), "Mat:%s  O:%umm", matStr(S), (unsigned)S.cutter_mm);
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Режим:%s", modeStr(S));
+    snprintf(b, sizeof(b), "Rezhym:%s", modeStr(S));
     pad20(l2, b);
   }
-  pad20(l3, "OK:Меню  START:Пуск");
+  pad20(l3, "OK:Menu  START:Pusk");
   draw4(l0, l1, l2, l3);
 }
 
 void uiDrawWizMaterial(const Settings &S) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "МАЙСТЕР: МАТЕРІАЛ");
+  pad20(l0, "MAISTER: MATERIAL");
   {
     char b[32];
     snprintf(b, sizeof(b), "> %s", matStr(S));
     pad20(l1, b);
   }
-  pad20(l2, "Крути: змінити");
-  pad20(l3, "OK:Далі  MENU:Назад");
+  pad20(l2, "Kruty: zminyty");
+  pad20(l3, "OK:Dali  MENU:Nazad");
   draw4(l0, l1, l2, l3);
 }
 
 void uiDrawWizDiameter(const Settings &S) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "МАЙСТЕР: ФРЕЗА O");
+  pad20(l0, "MAISTER: FREZA O");
   {
     char b[32];
     snprintf(b, sizeof(b), "> %umm", (unsigned)S.cutter_mm);
     pad20(l1, b);
   }
-  pad20(l2, "Крути: змінити");
-  pad20(l3, "OK:Далі  MENU:Назад");
+  pad20(l2, "Kruty: zminyty");
+  pad20(l3, "OK:Dali  MENU:Nazad");
   draw4(l0, l1, l2, l3);
 }
 
@@ -111,16 +111,16 @@ void uiDrawWizRecommend(const Settings &S, int32_t rec_u_x100, int32_t set_u_x10
                         int32_t potMin_u_x100, int32_t potMax_u_x100) {
   (void)S;
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "МАЙСТЕР: РЕКОМЕНД.");
+  pad20(l0, "MAISTER: REKOMEND");
   {
     char b[32];
-    snprintf(b, sizeof(b), "Рек: %ld.%02ld од",
+    snprintf(b, sizeof(b), "Rek:%ld.%02ld od",
              (long)(rec_u_x100 / 100), (long)(abs(rec_u_x100) % 100));
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Вст: %ld.%02ld од",
+    snprintf(b, sizeof(b), "Vst:%ld.%02ld od",
              (long)(set_u_x100 / 100), (long)(abs(set_u_x100) % 100));
     pad20(l2, b);
   }
@@ -137,66 +137,66 @@ void uiDrawRun(const Settings &S, int32_t rec_u_x100, int32_t set_u_x100, bool r
   char l0[21], l1[21], l2[21], l3[21];
   {
     char b[32];
-    snprintf(b, sizeof(b), "РОБОТА: %s", running ? "ВКЛ" : "ВИКЛ");
+    snprintf(b, sizeof(b), "ROBOTA: %s", running ? "ON" : "OFF");
     pad20(l0, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Рек:%ld.%02ld  %s",
+    snprintf(b, sizeof(b), "Rek:%ld.%02ld %s",
              (long)(rec_u_x100 / 100), (long)(abs(rec_u_x100) % 100), modeStr(S));
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Вст:%ld.%02ld  O:%u",
+    snprintf(b, sizeof(b), "Vst:%ld.%02ld O:%u",
              (long)(set_u_x100 / 100), (long)(abs(set_u_x100) % 100), (unsigned)S.cutter_mm);
     pad20(l2, b);
   }
-  pad20(l3, "START:Стоп  OK:Меню");
+  pad20(l3, "START:Stop  OK:Menu");
   draw4(l0, l1, l2, l3);
 }
 
 void uiDrawMenu(bool editing, const char line1[21], const char line2[21], const char line3[21]) {
   char l0[21];
-  if (editing) pad20(l0, "МЕНЮ (РЕДАГ.)");
-  else         pad20(l0, "МЕНЮ");
+  if (editing) pad20(l0, "MENU (EDIT)");
+  else         pad20(l0, "MENU");
   draw4(l0, line1, line2, line3);
 }
 
 void uiDrawCalRun(uint16_t totalSec, uint16_t secondsLeft) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "КАЛІБРУВАННЯ");
+  pad20(l0, "KALIBRUVANNIA");
   {
     char b[32];
-    snprintf(b, sizeof(b), "Трив: %us", (unsigned)totalSec);
+    snprintf(b, sizeof(b), "Tryv: %us", (unsigned)totalSec);
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Зал:  %us", (unsigned)secondsLeft);
+    snprintf(b, sizeof(b), "Zal : %us", (unsigned)secondsLeft);
     pad20(l2, b);
   }
-  pad20(l3, "MENU:Скасувати");
+  pad20(l3, "MENU:Skasuvaty");
   draw4(l0, l1, l2, l3);
 }
 
 void uiDrawCalInputDigits(int32_t ml_x100, uint8_t digitIdx) {
   char l0[21], l1[21], l2[21], l3[21];
-  pad20(l0, "КАЛ: ВВЕДИ мл/60с");
+  pad20(l0, "KAL: VVEDY ml/60s");
 
   int32_t w = ml_x100 / 100;
   int32_t f = abs(ml_x100) % 100;
 
   {
     char b[32];
-    snprintf(b, sizeof(b), "Знач: %ld.%02ld мл", (long)w, (long)f);
+    snprintf(b, sizeof(b), "Znach:%ld.%02ld ml", (long)w, (long)f);
     pad20(l1, b);
   }
   {
     char b[32];
-    snprintf(b, sizeof(b), "Розряд: %u", (unsigned)digitIdx);
+    snprintf(b, sizeof(b), "Rozriad: %u", (unsigned)digitIdx);
     pad20(l2, b);
   }
-  pad20(l3, "Крути:зм  OK:Далі");
+  pad20(l3, "Kruty:zm OK:Dali");
   draw4(l0, l1, l2, l3);
 }
