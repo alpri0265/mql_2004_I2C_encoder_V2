@@ -7,6 +7,8 @@ static constexpr uint32_t SETTINGS_MAGIC = 0x4D514C31UL; // "MQL1"
 void settingsLoadDefaults() {
   S.magic = SETTINGS_MAGIC;
 
+
+  S.uiLang = UILANG_EN;
   S.material = MAT_STEEL;
   S.cutter_mm = 10;
 
@@ -35,10 +37,19 @@ void settingsLoad() {
   if (S.magic != SETTINGS_MAGIC) {
     settingsLoadDefaults();
     settingsSave();
+    return;
+  }
+
+  // Validate language (handles old EEPROM layouts / random bytes)
+  if (S.uiLang != UILANG_EN && S.uiLang != UILANG_UA) {
+    S.uiLang = UILANG_EN;
+    settingsSave();
   }
 }
 
 void settingsSave() {
   S.magic = SETTINGS_MAGIC;
+
+  S.uiLang = UILANG_EN;
   EEPROM.put(0, S);
 }

@@ -50,3 +50,16 @@ constexpr uint8_t PIN_BTN_MENU = 4;       // (unused)
 // ===== Тайминги =====
 constexpr uint16_t INPUT_POLL_MS = 5;
 constexpr uint16_t UI_REFRESH_MS = 200;
+// =====================
+// UI language selection
+// =====================
+
+// Language IDs
+#define UI_LANG_EN  0
+#define UI_LANG_UA  1
+
+// Active UI language
+// ⚠️ В main має лишатися UI_LANG_EN
+// ⚠️ В гілці feature/ua-ui-cyrillic можна поставити UI_LANG_UA
+#define UI_LANG UI_LANG_EN
+
