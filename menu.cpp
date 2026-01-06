@@ -1,24 +1,6 @@
 #include <Arduino.h>
 #include "menu.h"
 
-// Items:
-// 0 Material
-// 1 Cutter Ø
-// 2 Mode
-// 3 Pulse ON
-// 4 Pulse OFF
-// 5 Kmin
-// 6 Kmax
-// 7 AlFactor
-// 8 POT Avg N
-// 9 POT Hyst
-// 10 Pump Gain
-// 11 Calibrate 60s (action)
-// 12 Calibrate 120s (action)
-// 13 Cal ml/u (read-only)
-// 14 Clear Cal (action)
-// 15 Save EEPROM (action)
-// 16 Load Defaults (action)
 static constexpr uint8_t ITEM_COUNT = 17;
 
 static int32_t clampI32(int32_t v, int32_t lo, int32_t hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
@@ -28,7 +10,7 @@ void menuReset(MenuState &m) {
   m.editing = false;
 }
 
-// Записуємо рівно 20 символів + '\0'
+// 19 символів тексту + '\0' (бо out[0] = маркер)
 static void pad19(char out19[20], const char* s) {
   uint8_t i = 0;
   for (; i < 19 && s[i]; i++) out19[i] = s[i];
@@ -37,10 +19,9 @@ static void pad19(char out19[20], const char* s) {
 }
 
 static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S) {
-  // Завжди: out[0] = lead (стрілка), а текст починається з out[1]
   out[0] = lead;
 
-  char tmp[40];   // текст без першого символу-стрілки
+  char tmp[40];
 
   switch (idx) {
     case 0:
@@ -133,10 +114,8 @@ static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S
       break;
   }
 
-  // Запис у out[1..19] + паддінг пробілами
   char padded[20];
   pad19(padded, tmp);
-
   for (uint8_t i = 0; i < 19; i++) out[1 + i] = padded[i];
   out[20] = '\0';
 }
@@ -229,8 +208,8 @@ MenuAction menuOnClick(MenuState &m, Settings &S) {
 }
 
 void menuRender3(const MenuState &m, const Settings &S, char line1[21], char line2[21], char line3[21]) {
-  uint8_t top = 0;
-  if (m.index >= 2) top = m.index - 2;
+  // ✅ СТОРІНКИ по 3 пункти, щоб стрілка рухалась по рядках
+  uint8_t top = (m.index / 3) * 3;
   if (top > ITEM_COUNT - 3) top = ITEM_COUNT - 3;
 
   for (uint8_t row = 0; row < 3; row++) {
