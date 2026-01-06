@@ -40,6 +40,11 @@ static uint32_t calDurationMs = 60000UL;
 static int32_t calMeasuredMl_x100 = 0; // 0..9999 (0.00..99.99 ml)
 static uint8_t calDigitIdx = 0;        // 0..3 (tens, ones, tenths, hundredths)
 
+// ===== MENU EDIT BACKUP (для CANCEL) =====
+static Settings _menuBackup;
+static bool     _menuBackupValid = false;
+// =========================================
+
 static int32_t clampI32(int32_t v, int32_t lo, int32_t hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
 
 static int32_t potMap(uint16_t adc, int32_t mn, int32_t mx) {
@@ -85,6 +90,7 @@ static void enterMenu() {
   }
   state = ST_MENU;
   menuReset(menu);
+  _menuBackupValid = false;   // <-- важно
   uiClear();
 }
 
@@ -251,7 +257,8 @@ void loop() {
     }
 
     // LONG OK -> Wizard safely
-    if (ev.encLong) {
+    // ВАЖНО: чтобы не ломать MENU/CANCEL, разрешаем этот shortcut только из READY
+    if (ev.encLong && state == ST_READY) {
       enterWizardSafe();
     }
 
@@ -307,7 +314,33 @@ void loop() {
         state = ST_WIZ_REC;
         uiClear();
       } else if (state == ST_MENU) {
+
+        // ===== EDIT backup logic =====
+        bool wasEditing = menu.editing;
+
+        // если мы сейчас НЕ в editing и нажали OK на редактируемом пункте,
+        // menuOnClick переведет в editing=true. Тогда сохраняем backup ДО любых изменений.
+        // Но изменения в S делаются только в menuOnDelta (по шагам),
+        // поэтому сохранять можно прямо сейчас.
+        if (!wasEditing) {
+          // НЕ делаем backup на action/read-only пунктах,
+          // но это не вредно — просто backupValid сбросится если editing не включится.
+          _menuBackup = S;
+          _menuBackupValid = true;
+        }
+
         MenuAction act = menuOnClick(menu, S);
+
+        // Если editing так и не включился (action/read-only) — backup не нужен
+        if (!menu.editing) {
+          _menuBackupValid = false;
+        }
+
+        // Если мы были в editing и вышли из него по OK — это COMMIT
+        if (wasEditing && !menu.editing) {
+          _menuBackupValid = false;
+        }
+        // =============================
 
         if (act == MENU_ACT_SAVE) {
           settingsSave();
@@ -333,29 +366,50 @@ void loop() {
           saveCalibrationFromInput();
           state = ST_MENU;
           menuReset(menu);
+          _menuBackupValid = false;
           uiClear();
         }
       }
     }
 
-    // MENU/BACK short
+    // MENU/BACK (hold)
     if (ev.menuClick) {
-      if (state == ST_READY) {
-        enterMenu();
-      } else if (state == ST_WIZ_REC || state == ST_RUN) {
-        enterMenu();
-      } else if (state == ST_MENU) {
-        state = ST_READY;
+
+      // ===== CANCEL in MENU editing =====
+      if (state == ST_MENU && menu.editing) {
+        if (_menuBackupValid) {
+          S = _menuBackup;           // revert all settings changes
+        }
+        menu.editing = false;        // exit edit mode
+        _menuBackupValid = false;
+
+        // range/rec depend on Settings
+        recomputeRecAndRange();
+
+        // force redraw
         uiClear();
-      } else if (state == ST_CAL_RUN) {
-        stopCalibrationPump();
-        state = ST_MENU;
-        menuReset(menu);
-        uiClear();
-      } else if (state == ST_CAL_INPUT) {
-        state = ST_MENU;
-        menuReset(menu);
-        uiClear();
+      } else {
+        // ===== old behavior (BACK) =====
+        if (state == ST_READY) {
+          enterMenu();
+        } else if (state == ST_WIZ_REC || state == ST_RUN) {
+          enterMenu();
+        } else if (state == ST_MENU) {
+          state = ST_READY;
+          _menuBackupValid = false;
+          uiClear();
+        } else if (state == ST_CAL_RUN) {
+          stopCalibrationPump();
+          state = ST_MENU;
+          menuReset(menu);
+          _menuBackupValid = false;
+          uiClear();
+        } else if (state == ST_CAL_INPUT) {
+          state = ST_MENU;
+          menuReset(menu);
+          _menuBackupValid = false;
+          uiClear();
+        }
       }
     }
 
@@ -379,15 +433,18 @@ void loop() {
         stopRunToReady();
       } else if (state == ST_MENU) {
         state = ST_READY;
+        _menuBackupValid = false;
         uiClear();
       } else if (state == ST_CAL_RUN) {
         stopCalibrationPump();
         state = ST_MENU;
         menuReset(menu);
+        _menuBackupValid = false;
         uiClear();
       } else if (state == ST_CAL_INPUT) {
         state = ST_MENU;
         menuReset(menu);
+        _menuBackupValid = false;
         uiClear();
       }
     }
