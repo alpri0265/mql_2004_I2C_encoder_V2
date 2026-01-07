@@ -10,6 +10,7 @@
 #include "menu.h"
 #include "ui_print.h"
 
+#include "lcd_test.h"   // ✅ NEW
 
 static AppState state = ST_READY;
 static MenuState menu;
@@ -275,6 +276,23 @@ void loop() {
       dnPrev = (digitalRead(PIN_BTN_DOWN) == LOW);
     }
 
+    // ✅ LCD TEST overlay: перехоплення кнопок/енкодера і вихід по OK/MENU
+    if (lcdTestIsActive()) {
+      if (ev.encStep)   lcdTestOnEnc(ev.encStep);
+      if (ev.encClick)  lcdTestOnOk();
+      if (ev.menuClick) lcdTestOnMenu();
+
+      // поки тест активний — нічого не чіпаємо
+      if (lcdTestIsActive()) {
+        // START у тесті ігноруємо
+        goto _afterPollBlock;
+      }
+
+      // вийшли з тесту -> очистити, і хай UI перемалює меню/екран
+      uiClear();
+      goto _afterPollBlock;
+    }
+
     // POT only in WIZ_REC / RUN
     if (state == ST_WIZ_REC || state == ST_RUN) {
       int32_t newSet = potMap(potGetAvgAdc(), potMin_x100, potMax_x100);
@@ -324,6 +342,14 @@ void loop() {
 
         if (!menu.editing) _menuBackupValid = false;
         if (wasEditing && !menu.editing) _menuBackupValid = false;
+
+        // ✅ NEW: LCD TEST start
+        if (act == MENU_ACT_LCD_TEST) {
+          // стартуємо поверх меню, state лишаємо ST_MENU
+          uiClear();
+          lcdTestEnter(0x20); // 0x20..  (якщо хочеш A0.. -> постав 0xA0)
+          goto _afterPollBlock;
+        }
 
         if (act == MENU_ACT_SAVE) {
           settingsSave();
@@ -428,6 +454,9 @@ void loop() {
       Serial.print("encStep: "); Serial.print(ev.encStep);
       Serial.print(" | state: "); Serial.println(state);
     }
+
+_afterPollBlock:
+    ;
   }
 
   // Runtime (pump)
@@ -447,6 +476,12 @@ void loop() {
   // UI refresh
   if (millis() - tUi >= UI_REFRESH_MS) {
     tUi = millis();
+
+    // ✅ Якщо тест активний — показуємо тільки його
+    if (lcdTestIsActive()) {
+      lcdTestDraw();
+      return;
+    }
 
     switch (state) {
       case ST_READY:    uiDrawReady(S); break;

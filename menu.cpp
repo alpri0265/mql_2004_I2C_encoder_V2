@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "menu.h"
 
-static constexpr uint8_t ITEM_COUNT = 18;
+static constexpr uint8_t ITEM_COUNT = 19; // ✅ було 18
 
 static int32_t clampI32(int32_t v, int32_t lo, int32_t hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
 
@@ -109,11 +109,13 @@ static void makeItemLine(char out[21], uint8_t idx, char lead, const Settings &S
       snprintf(tmp, sizeof(tmp), "Load Defaults");
       break;
 
-
     case 17:
       snprintf(tmp, sizeof(tmp), "Language: %s", (S.uiLang == UILANG_UA) ? "UA" : "EN");
       break;
 
+    case 18: // ✅ NEW
+      snprintf(tmp, sizeof(tmp), "LCD Test");
+      break;
 
     default:
       snprintf(tmp, sizeof(tmp), "-");
@@ -189,10 +191,10 @@ MenuAction menuOnDelta(MenuState &m, int8_t step, Settings &S) {
       S.pump_gain_steps_per_u_min = (uint32_t)g;
       return MENU_ACT_NONE;
     }
+
     case 17:
       S.uiLang = (S.uiLang == UILANG_UA) ? UILANG_EN : UILANG_UA;
       return MENU_ACT_SAVE;
-
 
     default:
       return MENU_ACT_NONE;
@@ -207,6 +209,7 @@ MenuAction menuOnClick(MenuState &m, Settings &S) {
     if (m.index == 14) { m.editing = true; return MENU_ACT_NONE; }
     if (m.index == 15) return MENU_ACT_SAVE;
     if (m.index == 16) return MENU_ACT_DEFAULTS;
+    if (m.index == 18) return MENU_ACT_LCD_TEST; // ✅ NEW
 
     // Read-only info item
     if (m.index == 13) return MENU_ACT_NONE;
@@ -222,7 +225,6 @@ MenuAction menuOnClick(MenuState &m, Settings &S) {
     return MENU_ACT_NONE;
   }
 }
-
 
 void menuRender3(const MenuState &m, const Settings &S, char line1[21], char line2[21], char line3[21]) {
   // ✅ СТОРІНКИ по 3 пункти, щоб стрілка рухалась по рядках
