@@ -19,3 +19,6 @@ void uiDrawCalInputDigits(int32_t ml_x100, uint8_t digitIdx); // digitIdx 0..3
 // ✅ НОВЕ: LCD TEST (таблиця символів). base: 0x20,0x30..0xF0
 void uiDrawLcdTest(uint8_t base);
 void uiDrawLcdTest(uint8_t base);   // base = 0xA0..0xFF
+
+// Test function to display specific Cyrillic letters with their codes
+void uiDrawCyrillicTest();
