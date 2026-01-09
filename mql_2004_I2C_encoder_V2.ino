@@ -221,11 +221,11 @@ void setup() {
   recomputeRecAndRange();
   uiDrawReady(S);
 
-  // HARD START init
+  // HARD START init (працює на UNO/Micro)
   startRawPrev = (digitalRead(PIN_START_BTN) == LOW);
   startRawLastMs = millis();
 
-  // HARD DIA init
+  // HARD DIA init (працює на UNO/Micro)
   upPrev = (digitalRead(PIN_BTN_UP) == LOW);
   dnPrev = (digitalRead(PIN_BTN_DOWN) == LOW);
   upPressMs = dnPressMs = millis();
@@ -248,7 +248,7 @@ void loop() {
     InputEvents ev;
     inputPoll(ev);
 
-    // HARD START override (direct pin)
+    // HARD START override (direct pin read - працює на UNO/Micro)
     {
       bool sNow = (digitalRead(PIN_START_BTN) == LOW);
       if (sNow && !startRawPrev) {
@@ -260,7 +260,7 @@ void loop() {
       startRawPrev = sNow;
     }
 
-    // HARD DIA accel override (only in ST_WIZ_DIA)
+    // HARD DIA accel override (only in ST_WIZ_DIA, працює на UNO/Micro)
     if (state == ST_WIZ_DIA) {
       // ignore ev.encStep from input.cpp here
       ev.encStep = 0;

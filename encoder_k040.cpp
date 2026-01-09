@@ -16,14 +16,17 @@ static volatile int16_t isrEdges = 0;     // накопление "полуша�
 static volatile uint8_t prevAB = 0;      // 2-битное предыдущее состояние
 static volatile uint32_t lastEdgeUs = 0; // защита от дребезга по времени
 
+// ===== READ ENCODER PINS (FAST PORT READ) =====
+// Читає стан пінів енкодера через регістр порту для швидкої роботи в ISR.
+// Підтримка Arduino UNO/Nano та Arduino Micro (різні біти в PIND).
 static inline uint8_t readAB_fast() {
   uint8_t d = PIND;
 #if defined(ARDUINO_AVR_MICRO)
-  // Micro: D2=PD1, D3=PD0
+  // Arduino Micro: D2=PD1 (bit 1), D3=PD0 (bit 0)
   uint8_t a = (d >> 1) & 1;  // D2 -> bit 1
   uint8_t b = (d >> 0) & 1;  // D3 -> bit 0
 #else
-  // UNO/Nano: D2=PD2, D3=PD3
+  // Arduino UNO/Nano: D2=PD2 (bit 2), D3=PD3 (bit 3)
   uint8_t a = (d >> 2) & 1;  // D2 -> bit 2
   uint8_t b = (d >> 3) & 1;  // D3 -> bit 3
 #endif

@@ -9,7 +9,8 @@ struct EncoderEvents {
 
 class EncoderK040 {
 public:
-  // pinA = D2, pinB = D3 (для UNO/Micro это INT0/INT1), pinBtn = A3
+  // pinA = D2, pinB = D3 (INT0/INT1 для UNO/Micro), pinBtn = A3
+  // Підтримує Arduino UNO/Nano та Arduino Micro (автоматичне визначення)
   void begin(uint8_t pinA, uint8_t pinB, uint8_t pinBtn);
   EncoderEvents poll();
 
