@@ -1,0 +1,15 @@
+Додано підтримку Arduino Micro для енкодера KY-040
+
+Зміни:
+- encoder_k040.cpp: додано умовну компіляцію для Arduino Micro
+  * Для Micro: D2=PD1 (bit 1), D3=PD0 (bit 0)
+  * Для UNO/Nano: D2=PD2 (bit 2), D3=PD3 (bit 3) - як раніше
+- encoder_k040.h: оновлено коментар про підтримку UNO/Micro
+
+Технічні деталі:
+- Функція readAB_fast() тепер автоматично визначає плату через
+  ARDUINO_AVR_MICRO і використовує правильні біти порту PIND
+- Інші піни (A0-A3, D10-D12) однакові для обох плат, змін не потребують
+- digitalPinToInterrupt() працює коректно для обох плат
+
+Код тепер сумісний з Arduino UNO/Nano та Arduino Micro.

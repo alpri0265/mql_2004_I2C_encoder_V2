@@ -17,10 +17,16 @@ static volatile uint8_t prevAB = 0;      // 2-битное предыдущее 
 static volatile uint32_t lastEdgeUs = 0; // защита от дребезга по времени
 
 static inline uint8_t readAB_fast() {
-  // UNO: D2=PD2, D3=PD3
   uint8_t d = PIND;
-  uint8_t a = (d >> 2) & 1;
-  uint8_t b = (d >> 3) & 1;
+#if defined(ARDUINO_AVR_MICRO)
+  // Micro: D2=PD1, D3=PD0
+  uint8_t a = (d >> 1) & 1;  // D2 -> bit 1
+  uint8_t b = (d >> 0) & 1;  // D3 -> bit 0
+#else
+  // UNO/Nano: D2=PD2, D3=PD3
+  uint8_t a = (d >> 2) & 1;  // D2 -> bit 2
+  uint8_t b = (d >> 3) & 1;  // D3 -> bit 3
+#endif
   return (a << 1) | b;  // AB in bits: A as MSB, B as LSB
 }
 

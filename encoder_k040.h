@@ -9,7 +9,7 @@ struct EncoderEvents {
 
 class EncoderK040 {
 public:
-  // pinA = D2, pinB = D3 (для UNO это INT0/INT1), pinBtn = A3
+  // pinA = D2, pinB = D3 (для UNO/Micro это INT0/INT1), pinBtn = A3
   void begin(uint8_t pinA, uint8_t pinB, uint8_t pinBtn);
   EncoderEvents poll();
 
