@@ -9,7 +9,9 @@
 #include "ui_text_en.h"
 #include "ui_text_ua.h"
 #include "settings.h"
-#include <avr/pgmspace.h>
+#if defined(__AVR__)
+  #include <avr/pgmspace.h>
+#endif
 
 // Helper function to get string from PROGMEM based on language
 static void uiStrFromProgmem(char* buf, size_t bufSize, const char* enStr, const char* uaStr) {
@@ -466,12 +468,11 @@ void uiDrawCalInputDigits(int32_t ml_x100, uint8_t digitIdx) {
   }
   draw4(l0, l1, l2, l3);
 }
-#include <avr/pgmspace.h>
 
 static void uiPrintHex2(uint8_t v) {
-  static const char hexdig[] PROGMEM = "0123456789ABCDEF";
-  char a = pgm_read_byte(&hexdig[(v >> 4) & 0x0F]);
-  char b = pgm_read_byte(&hexdig[v & 0x0F]);
+  static const char hexdig[] = "0123456789ABCDEF";
+  char a = hexdig[(v >> 4) & 0x0F];
+  char b = hexdig[v & 0x0F];
   lcd.write(a);
   lcd.write(b);
 }

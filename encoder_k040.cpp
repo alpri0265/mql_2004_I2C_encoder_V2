@@ -16,20 +16,23 @@ static volatile int16_t isrEdges = 0;     // накопление "полуша�
 static volatile uint8_t prevAB = 0;      // 2-битное предыдущее состояние
 static volatile uint32_t lastEdgeUs = 0; // защита от дребезга по времени
 
-static inline uint8_t readAB_fast() {
-  // UNO: D2=PD2, D3=PD3
-  uint8_t d = PIND;
-  uint8_t a = (d >> 2) & 1;
-  uint8_t b = (d >> 3) & 1;
+// Пины энкодера (сохраняем для чтения в ISR)
+static uint8_t encPinA = 2;
+static uint8_t encPinB = 3;
+
+// Портируемое чтение состояния энкодера (работает на AVR и ARM)
+static inline uint8_t readAB_portable() {
+  uint8_t a = digitalRead(encPinA) ? 1 : 0;
+  uint8_t b = digitalRead(encPinB) ? 1 : 0;
   return (a << 1) | b;  // AB in bits: A as MSB, B as LSB
 }
 
 static void encISR() {
   uint32_t us = micros();
-  if ((uint16_t)(us - lastEdgeUs) < ENC_MIN_EDGE_US) return;
+  if ((uint32_t)(us - lastEdgeUs) < ENC_MIN_EDGE_US) return;
   lastEdgeUs = us;
 
-  uint8_t ab = readAB_fast();
+  uint8_t ab = readAB_portable();
   uint8_t idx = (prevAB << 2) | ab;
   prevAB = ab;
 
@@ -96,17 +99,17 @@ static void btnPoll(bool &click, bool &hold) {
 static bool isrAttached = false;
 
 void EncoderK040::begin(uint8_t pinA, uint8_t pinB, uint8_t pinBtn_) {
-  (void)pinA;
-  (void)pinB;
-
+  // Сохраняем пины для использования в ISR
+  encPinA = pinA;
+  encPinB = pinB;
   pinBtn = pinBtn_;
 
   // Encoder pins
-  pinMode(PIN_BTN_UP, INPUT_PULLUP);    // D2
-  pinMode(PIN_BTN_DOWN, INPUT_PULLUP);  // D3
+  pinMode(encPinA, INPUT_PULLUP);
+  pinMode(encPinB, INPUT_PULLUP);
 
   // Init prev state
-  prevAB = readAB_fast();
+  prevAB = readAB_portable();
   isrEdges = 0;
   lastEdgeUs = micros();
 
@@ -115,8 +118,8 @@ void EncoderK040::begin(uint8_t pinA, uint8_t pinB, uint8_t pinBtn_) {
 
   // Attach interrupts once
   if (!isrAttached) {
-    attachInterrupt(digitalPinToInterrupt(PIN_BTN_UP), encISR, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_BTN_DOWN), encISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encPinA), encISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encPinB), encISR, CHANGE);
     isrAttached = true;
   }
 

@@ -2,10 +2,74 @@
 #include "config.h"
 #include "pump.h"
 
-static volatile bool stepEnable = false;
+// ============================================================
+// Portable pump driver for Arduino Nano R4 (ARM) and AVR
+// Uses FspTimer on Renesas, Timer1 on AVR
+// ============================================================
 
-// --- Timer1: CTC, частота задаётся через OCR1A + прескалер
-static void timer1Init() {
+static volatile bool stepEnable = false;
+static volatile uint32_t stepIntervalUs = 10000; // микросекунды между шагами
+
+// ==================== PLATFORM-SPECIFIC CODE ====================
+
+#if defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_ARCH_RENESAS)
+// -------------------- Arduino Nano R4 (Renesas RA4M1) --------------------
+#include "FspTimer.h"
+
+static FspTimer pumpTimer;
+static bool timerInitialized = false;
+
+// Callback для таймера
+void pumpTimerCallback(timer_callback_args_t __attribute((unused)) *p_args) {
+  if (!stepEnable) return;
+  
+  digitalWrite(PIN_STEP, HIGH);
+  delayMicroseconds(4);
+  digitalWrite(PIN_STEP, LOW);
+}
+
+static void timerInit() {
+  uint8_t timerType = GPT_TIMER;
+  int8_t timerNum = FspTimer::get_available_timer(timerType);
+  
+  if (timerNum < 0) {
+    timerType = AGT_TIMER;
+    timerNum = FspTimer::get_available_timer(timerType);
+  }
+  
+  if (timerNum >= 0) {
+    pumpTimer.begin(TIMER_MODE_PERIODIC, timerType, timerNum, 100.0f, 0.0f, pumpTimerCallback);
+    pumpTimer.setup_overflow_irq();
+    pumpTimer.open();
+    timerInitialized = true;
+  }
+}
+
+static void timerSetFrequency(uint16_t hz) {
+  if (!timerInitialized) return;
+  if (hz < 1) hz = 1;
+  if (hz > 2000) hz = 2000;
+  
+  pumpTimer.stop();
+  pumpTimer.set_frequency((float)hz);
+}
+
+static void timerStart() {
+  if (!timerInitialized) return;
+  pumpTimer.start();
+}
+
+static void timerStop() {
+  if (!timerInitialized) return;
+  pumpTimer.stop();
+}
+
+#else
+// -------------------- AVR (Arduino Uno/Nano classic) --------------------
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
+static void timerInit() {
   cli();
   TCCR1A = 0;
   TCCR1B = 0;
@@ -23,7 +87,6 @@ static void timer1Init() {
 }
 
 static void setPrescalerBits(uint16_t presc) {
-  // Clear CS12..CS10
   TCCR1B &= ~((1 << CS12) | (1 << CS11) | (1 << CS10));
 
   switch (presc) {
@@ -32,14 +95,13 @@ static void setPrescalerBits(uint16_t presc) {
     case 64:   TCCR1B |= (1 << CS11) | (1 << CS10); break;
     case 256:  TCCR1B |= (1 << CS12); break;
     case 1024: TCCR1B |= (1 << CS12) | (1 << CS10); break;
-    default:   TCCR1B |= (1 << CS11); break; // 8
+    default:   TCCR1B |= (1 << CS11); break;
   }
 }
 
-// Подбор прескалера чтобы OCR1A влезал в 16 бит (0..65535)
-static void pumpSetRateHz(uint16_t hz) {
+static void timerSetFrequency(uint16_t hz) {
   if (hz < 1) hz = 1;
-  if (hz > 2000) hz = 2000; // безопасный максимум для ISR
+  if (hz > 2000) hz = 2000;
 
   const uint16_t prescList[] = {1, 8, 64, 256, 1024};
   uint16_t bestPresc = 1024;
@@ -51,7 +113,7 @@ static void pumpSetRateHz(uint16_t hz) {
     if (ocr <= 65535UL) {
       bestPresc = p;
       bestOcr = ocr;
-      break; // берём самый “быстрый” прескалер, который влезает
+      break;
     }
   }
 
@@ -62,6 +124,14 @@ static void pumpSetRateHz(uint16_t hz) {
   SREG = sreg;
 }
 
+static void timerStart() {
+  TIMSK1 |= (1 << OCIE1A);
+}
+
+static void timerStop() {
+  TIMSK1 &= ~(1 << OCIE1A);
+}
+
 ISR(TIMER1_COMPA_vect) {
   if (!stepEnable) return;
 
@@ -70,6 +140,10 @@ ISR(TIMER1_COMPA_vect) {
   digitalWrite(PIN_STEP, LOW);
 }
 
+#endif
+
+// ==================== COMMON API ====================
+
 void pumpBegin() {
   pinMode(PIN_STEP, OUTPUT);
   pinMode(PIN_DIR, OUTPUT);
@@ -77,19 +151,21 @@ void pumpBegin() {
 
   digitalWrite(PIN_STEP, LOW);
   digitalWrite(PIN_DIR, HIGH);   // направление любое
-  digitalWrite(PIN_ENA, HIGH);   // ENA polarity inverted: HIGH = disabled (for your wiring)
+  digitalWrite(PIN_ENA, HIGH);   // ENA polarity inverted: HIGH = disabled
 
-  timer1Init();
+  timerInit();
 }
 
 void pumpSetEnable(bool en) {
   stepEnable = en;
 
-  if (en) TIMSK1 |= (1 << OCIE1A);
-  else    TIMSK1 &= ~(1 << OCIE1A);
+  if (en) {
+    timerStart();
+  } else {
+    timerStop();
+  }
 
-  // ENA у тебя аппаратно не используется, но оставим как было
-  digitalWrite(PIN_ENA, en ? LOW : HIGH);  // ENA polarity inverted: LOW=enable, HIGH=disable
+  digitalWrite(PIN_ENA, en ? LOW : HIGH);  // ENA polarity inverted
 }
 
 void pumpStartSteps(uint32_t stepsPerSec) {
@@ -98,13 +174,13 @@ void pumpStartSteps(uint32_t stepsPerSec) {
     return;
   }
   if (stepsPerSec > 2000) stepsPerSec = 2000;
-  pumpSetRateHz((uint16_t)stepsPerSec);
+  timerSetFrequency((uint16_t)stepsPerSec);
   pumpSetEnable(true);
 }
 
 void pumpStop() {
   stepEnable = false;
-  TIMSK1 &= ~(1 << OCIE1A);
+  timerStop();
   digitalWrite(PIN_ENA, HIGH);  // disable (inverted)
 }
 
@@ -126,7 +202,7 @@ void pumpRunCont(int32_t flow_x100, uint32_t pumpGain) {
   if (hz < 1) hz = 1;
   if (hz > 2000) hz = 2000;
 
-  pumpSetRateHz((uint16_t)hz);
+  timerSetFrequency((uint16_t)hz);
   pumpSetEnable(true);
 }
 

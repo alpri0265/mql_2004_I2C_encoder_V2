@@ -3,7 +3,9 @@
 #include "ui_text_en.h"
 #include "ui_text_ua.h"
 #include "settings.h"
-#include <avr/pgmspace.h>
+#if defined(__AVR__)
+  #include <avr/pgmspace.h>
+#endif
 #include <string.h>
 
 // Helper function to get string from PROGMEM based on language

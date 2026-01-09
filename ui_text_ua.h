@@ -1,5 +1,8 @@
 #pragma once
-#include <avr/pgmspace.h>
+#include <Arduino.h>
+#if defined(__AVR__)
+  #include <avr/pgmspace.h>
+#endif
 
 // Russian UI strings (stored in PROGMEM to save RAM)
 // Using Cyrillic UTF-8 encoding
