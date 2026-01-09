@@ -1,15 +1,27 @@
 #include "config.h"
 #include "input.h"
-#include "encoder_k040.h"
 
-static EncoderK040 encoder;
+// ========== INPUT MODE SELECTION ==========
+#ifdef INPUT_MODE_BUTTONS
+  #include "input_buttons.h"
+  static ButtonsInput buttons;
+#else
+  // Default to encoder mode
+  #include "encoder_k040.h"
+  static EncoderK040 encoder;
+#endif
 
 void inputBegin() {
+#ifdef INPUT_MODE_BUTTONS
+  // 4 кнопки: UP, DOWN, OK, MENU
+  buttons.begin(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_OK, PIN_BTN_MENU);
+#else
   // Encoder pins из config.h:
   //  PIN_BTN_UP   -> ENC A
   //  PIN_BTN_DOWN -> ENC B
   //  PIN_BTN_OK   -> ENC BTN
   encoder.begin(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_OK);
+#endif
 
   pinMode(PIN_START_BTN, INPUT_PULLUP);
   pinMode(PIN_POT, INPUT);
@@ -18,13 +30,20 @@ void inputBegin() {
 void inputPoll(InputEvents &ev) {
   ev = {};
 
+#ifdef INPUT_MODE_BUTTONS
+  // Кнопки
+  ButtonEvents b = buttons.poll();
+  ev.encStep   = b.step;
+  ev.encClick  = b.okClick;
+  ev.menuClick = b.menuClick;
+#else
   // Энкодер
   EncoderEvents e = encoder.poll();
   ev.encStep  = e.step;
   ev.encClick = e.click;
-
   // Длинное нажатие энкодера = MENU/BACK
   ev.menuClick = e.hold;
+#endif
 
   // START кнопка (как было)
   static uint8_t lastStart = HIGH;
